@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server';
-import Anthropic from '@anthropic-ai/sdk';
+import OpenAI from 'openai';
 import { createClient } from '@/lib/supabase';
 
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY || '',
+const openai = new OpenAI({
+  apiKey: process.env.OPENROUTER_API_KEY || '',
+  baseURL: "https://openrouter.ai/api/v1",
 });
 
 export async function POST(request: Request) {
@@ -14,9 +15,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Symptoms are required' }, { status: 400 });
     }
 
-    // 1. Prompt Claude to analyze symptoms and return standard specialization keywords
-    const msg = await anthropic.messages.create({
-      model: "claude-3-sonnet-20240229",
+    // 1. Prompt OpenRouter/Gemini Flash to analyze symptoms 
+    const response = await openai.chat.completions.create({
+      model: "google/gemini-flash-1.5",
       max_tokens: 50,
       messages: [{ 
         role: "user", 
@@ -24,35 +25,27 @@ export async function POST(request: Request) {
       }],
     });
     
-    let contentText = '';
-    const contentBlock = msg.content[0];
-    if (contentBlock && 'text' in contentBlock) {
-        contentText = contentBlock.text.trim();
-    }
-
-    const suggestedSpecialization = contentText || 'General Physician';
+    const contentText = response.choices[0]?.message?.content?.trim() || 'General Physician';
 
     // 2. Query database for top 3 available doctors in that category
     const supabase = createClient();
     const { data: doctors, error } = await supabase
       .from('doctors')
       .select('*')
-      .ilike('specialization', `%${suggestedSpecialization}%`)
+      .ilike('specialization', `%${contentText}%`)
       .eq('is_available', true)
       .order('rating', { ascending: false })
       .limit(3);
 
-    if (error) {
-        throw error;
-    }
+    if (error) throw error;
 
     return NextResponse.json({
-      detectedSpecialization: suggestedSpecialization,
+      detectedSpecialization: contentText,
       doctors: doctors || []
     });
 
   } catch (error: any) {
-    console.error("AI Error:", error);
+    console.error("OpenRouter AI Error:", error);
     return NextResponse.json({ error: 'Failed to analyze via AI' }, { status: 500 });
   }
 }

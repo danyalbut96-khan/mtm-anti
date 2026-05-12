@@ -8,8 +8,8 @@ Welcome to **Smart Doctor Connect AI**, a complete end-to-end medical tele-healt
 ## 🚀 Key Application Features
 
 ### 🤖 AI Infrastructure
-- **Claude Matching System**: Dynamically extracts symptoms from raw language user queries into definitive doctor specializations via the Anthropic Claude `messages` API endpoint.
-- **Automated AI Chat Triage**: Built-in intelligent responder acting as Dr's front-desk. If a doctor switches to `Offline` status in their dashboard, Claude directly interfaces with patients inside chat to structure clinical descriptions.
+- **Gemini Matching System**: Dynamically extracts symptoms from raw language user queries into definitive doctor specializations via the OpenRouter API gateway routing to Google Gemini Flash.
+- **Automated AI Chat Triage**: Built-in intelligent responder acting as Dr's front-desk. If a doctor switches to `Offline` status, Gemini directly interfaces with patients to collect data.
 
 ### 👨‍⚕️ Clinical Dashboards & Engine
 - **Full Profile Discovery Engine**: Fast indexed search for medical professionals by speciality, city, or consultation mode preference.
@@ -28,7 +28,7 @@ Welcome to **Smart Doctor Connect AI**, a complete end-to-end medical tele-healt
 | **Framework** | Next.js 14 (App Router architecture) |
 | **Database** | PostgreSQL on Supabase |
 | **Authentication** | Supabase Auth hooks |
-| **LLM Driver** | `@anthropic-ai/sdk` (Claude 3.5 Sonnet) |
+| **LLM Driver** | `openai` (Connecting to OpenRouter / Gemini Flash 1.5) |
 | **Styling** | Global utility CSS custom property system (Inter Typography) |
 | **Notifications** | Resend Email API |
 
@@ -52,7 +52,7 @@ Ensure the following variables exist in a `.env.local` root file:
 NEXT_PUBLIC_SUPABASE_URL=https://xxxxxxx.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhb...
 SUPABASE_SERVICE_ROLE_KEY=eyJhb...
-ANTHROPIC_API_KEY=sk-ant-xxxxxx
+OPENROUTER_API_KEY=sk-or-v1-xxxxxx
 RESEND_API_KEY=re_xxxxxxx
 ```
 
