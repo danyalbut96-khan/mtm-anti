@@ -21,20 +21,19 @@ export default function Navbar() {
       const { data: { session } } = await supabase.auth.getSession();
       
       if (session?.user) {
-         // Fast parallel lookup determining the specific role context
-         const [docRes, patRes] = await Promise.all([
-             supabase.from('doctors').select('name').eq('id', session.user.id).single(),
-             supabase.from('patients').select('name').eq('id', session.user.id).single()
-         ]);
-
-         if (docRes.data) {
-             setUser(docRes.data);
+         const { data: docData } = await supabase.from('doctors').select('name').eq('id', session.user.id).maybeSingle();
+         
+         if (docData) {
+             setUser(docData);
              setRole('doctor');
-         } else if (patRes.data) {
-             setUser(patRes.data);
-             setRole('patient');
          } else {
-             setUser({ name: session.user.email?.split('@')[0] });
+             const { data: patData } = await supabase.from('patients').select('name').eq('id', session.user.id).maybeSingle();
+             if (patData) {
+                 setUser(patData);
+                 setRole('patient');
+             } else {
+                 setUser({ name: session.user.email?.split('@')[0] });
+             }
          }
       } else {
          setUser(null);

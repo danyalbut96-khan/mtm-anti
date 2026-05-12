@@ -2,6 +2,7 @@
 
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import { createClientBrowser } from '@/lib/supabaseBrowser';
 
 function AuthContent() {
@@ -175,9 +176,9 @@ function AuthContent() {
 
             <div style={{ textAlign: 'center', marginTop: '25px', fontSize: '14px', borderTop: '1px solid #F3F4F6', paddingTop: '20px', color: 'var(--text-light)' }}>
                First time on the platform? <br/>
-               <a href={mode === 'patient' ? "/doctor-register" : "/doctor-register"} style={{ color: 'var(--primary-color)', fontWeight: 700, textDecoration: 'underline' }}>
+               <Link href={mode === 'patient' ? "/auth/signup" : "/auth/signup?role=doctor"} style={{ color: 'var(--primary-color)', fontWeight: 700, textDecoration: 'underline' }}>
                    Initialize Secure Registration
-               </a>
+               </Link>
             </div>
         </div>
       </div>
