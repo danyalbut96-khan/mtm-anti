@@ -95,7 +95,7 @@ export default function DoctorRegisterPage() {
 
         // 3. Routing override on perfect capture
         alert("Registration Successful! Profile data recorded.");
-        router.push('/dashboard/doctor');
+        router.push('/doctor/dashboard');
       } else {
         throw new Error("Failed to create user session.");
       }

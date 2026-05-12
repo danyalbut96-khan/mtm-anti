@@ -36,9 +36,13 @@ export async function proxy(request: NextRequest) {
 
   const { data: { user } } = await supabase.auth.getUser()
 
-  // Advanced protected route gate (Phase 1 Hardening)
-  if (request.nextUrl.pathname.startsWith('/dashboard') && !user) {
-    return NextResponse.redirect(new URL('/auth', request.url))
+  // Requirement Part 2: Update guards for correct Canonical mapping
+  const isProtected = request.nextUrl.pathname.startsWith('/patient') || 
+                     request.nextUrl.pathname.startsWith('/doctor/dashboard') ||
+                     request.nextUrl.pathname.startsWith('/book');
+
+  if (isProtected && !user) {
+    return NextResponse.redirect(new URL('/auth/login', request.url))
   }
 
   return response

@@ -53,7 +53,7 @@ export default function PatientDashboard() {
                   <h1 style={{ fontSize: '28px', fontWeight: 700 }}>Welcome Back, Patient!</h1>
                   <p style={{ color: 'var(--text-light)' }}>Connected to Real-Time Health Updates.</p>
               </div>
-              <Link href="/search" className="btn btn-primary" style={{ borderRadius: '12px' }}>
+              <Link href="/find-doctor" className="btn btn-primary" style={{ borderRadius: '12px' }}>
                   <i className="fa-solid fa-plus"></i> Find Doctor
               </Link>
           </div>
@@ -96,7 +96,7 @@ export default function PatientDashboard() {
                   </div>
                   <h4 style={{ fontWeight: 700 }}>Smart AI Match Engine</h4>
                   <p style={{ fontSize: '14px', color: 'var(--text-light)', marginTop: '6px', lineHeight: 1.6 }}>Based on your recent intake queries, we recommend connecting with a regional Neurology expert.</p>
-                  <Link href="/search?specialization=Neurology" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', marginTop: '16px', fontWeight: 700, color: 'var(--primary-color)', fontSize: '14px' }}>
+                  <Link href="/find-doctor?specialization=Neurology" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', marginTop: '16px', fontWeight: 700, color: 'var(--primary-color)', fontSize: '14px' }}>
                       Show Specialists <i className="fa-solid fa-arrow-right"></i>
                   </Link>
               </div>

@@ -90,7 +90,7 @@ function AuthContent() {
       }
 
       // 3. Successful Authentication Loopback injection
-      const redirectTarget = searchParams.get('redirectTo') || (mode === 'patient' ? '/dashboard/patient' : '/dashboard/doctor');
+      const redirectTarget = searchParams.get('redirectTo') || (mode === 'patient' ? '/patient/dashboard' : '/doctor/dashboard');
       
       alert("Authorization Validated! Forwarding session...");
       router.push(redirectTarget);

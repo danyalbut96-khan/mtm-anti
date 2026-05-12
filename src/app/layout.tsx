@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import Link from "next/link";
+import Navbar from "@/components/Navbar";
 
 export const metadata: Metadata = {
   title: "SmartDoc AI - Find the Right Doctor Instantly",
@@ -20,35 +21,20 @@ export default function RootLayout({
           href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" 
         />
       </head>
-      <body>
-        {/* Elegant Navbar with Glassmorphism defaults */}
-        <nav className="navbar">
-          <div className="container nav-container">
-            <Link href="/" className="logo">
-              <i className="fa-solid fa-notes-medical"></i> SmartDoc <span>AI</span>
-            </Link>
-            <div className="nav-links">
-              <Link href="/">Home</Link>
-              <Link href="/search">Find Doctor</Link>
-              <Link href="/doctor-register">For Doctors</Link>
-              <Link href="/chat">AI Support</Link>
-            </div>
-            <div className="nav-actions">
-              <Link href="/auth" className="btn btn-outline" style={{ padding: '10px 20px', fontSize: '14px' }}>Sign In</Link>
-              <Link href="/auth" className="btn btn-primary" style={{ padding: '10px 20px', fontSize: '14px' }}>Get Started</Link>
-            </div>
-          </div>
-        </nav>
+      {/* Requirement Part 3: Body configuration enabling full control preventing side overflow */}
+      <body style={{ overflowX: 'hidden', width: '100vw' }}>
+        
+        {/* Unified Dynamic Responsive Hook */}
+        <Navbar />
 
-        {/* Unified Main injection with fade-in wrapper */}
-        <main className="fade-in">{children}</main>
+        <main className="fade-in" style={{ minHeight: '80vh' }}>
+          {children}
+        </main>
 
-        {/* Floating Chat Widget Requirement - Placed Globally per Phase 2 prompt */}
         <Link href="/support" className="floating-chat-widget" title="Quick AI Intake Chat">
              <i className="fa-solid fa-comment-medical"></i>
         </Link>
 
-        {/* Standardized Footer containing Mandatory Footer credits */}
         <footer>
           <div className="container">
             <div className="footer-grid">
@@ -64,33 +50,33 @@ export default function RootLayout({
               <div className="footer-col">
                 <h4>Medical Resources</h4>
                 <ul>
-                  <li><Link href="/search">Search Index</Link></li>
-                  <li><Link href="/doctor-register">Provider Sign Up</Link></li>
-                  <li><Link href="/chat">Emergency AI Triage</Link></li>
+                  {/* Requirement: Canonical Paths mapped strictly */}
+                  <li><Link href="/find-doctor">Search Index</Link></li>
+                  <li><Link href="/auth/signup">Provider Sign Up</Link></li>
+                  <li><Link href="/support">AI Diagnostics</Link></li>
                 </ul>
               </div>
               <div className="footer-col">
                 <h4>Platforms</h4>
                 <ul>
-                  <li><Link href="/dashboard/patient">Patient Dashboard</Link></li>
-                  <li><Link href="/dashboard/doctor">Clinician Portal</Link></li>
-                  <li><a href="#">System Status</a></li>
+                  <li><Link href="/patient/dashboard">Patient Dashboard</Link></li>
+                  <li><Link href="/doctor/dashboard">Clinician Portal</Link></li>
+                  <li><a href="#">Terms of Use</a></li>
                 </ul>
               </div>
               <div className="footer-col">
                 <h4>Compliance</h4>
                 <ul>
                   <li><a href="#">Data Privacy</a></li>
-                  <li><a href="#">Terms of Use</a></li>
+                  <li><a href="#">Transparency</a></li>
                   <li><a href="#">Contact Center</a></li>
                 </ul>
               </div>
             </div>
             
             <div className="footer-bottom">
-              <p>&copy; {new Date().getFullYear()} Smart Doctor Connect AI. Licensed Platform.</p>
+              <p>&copy; {new Date().getFullYear()} Smart Doctor Connect AI. Licensed.</p>
               
-              {/* MANDATORY PHASE 2 BRANDING LINK */}
               <div className="cloudex-credit">
                   Made with ❤️ by <a href="https://cloudexify.site" target="_blank" rel="noopener noreferrer">Cloudexify</a>
               </div>

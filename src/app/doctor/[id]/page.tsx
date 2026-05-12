@@ -137,7 +137,7 @@ export default function DoctorProfilePage({ params }: { params: Promise<{ id: st
                         <div style={{ fontSize: '14px', fontWeight: 700, marginTop: '4px' }}>{doctor.rating || 5.0} Total Quality Score</div>
                     </div>
 
-                    <Link href={`/booking?docId=${doctor.id}`} className="btn btn-primary" style={{ width: '100%', padding: '15px', borderRadius: '14px', fontSize: '16px', fontWeight: 800, marginBottom: '15px' }}>
+                    <Link href={`/book/${doctor.id}`} className="btn btn-primary" style={{ width: '100%', padding: '15px', borderRadius: '14px', fontSize: '16px', fontWeight: 800, marginBottom: '15px' }}>
                         Initialize Appointment
                     </Link>
 

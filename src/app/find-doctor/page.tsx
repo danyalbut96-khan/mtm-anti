@@ -153,7 +153,7 @@ export default function SearchPage() {
                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.5fr', gap: '12px', borderTop: '1px solid #F3F4F6', paddingTop: '20px' }}>
                         <Link href={`/doctor/${doc.id}`} className="btn btn-outline" style={{ padding: '10px' }}>Profile</Link>
                         <div style={{ display: 'flex', gap: '8px' }}>
-                           <Link href={`/booking?docId=${doc.id}`} className="btn btn-primary" style={{ flex: 1, padding: '10px', fontWeight: 700 }}>Book Now</Link>
+                           <Link href={`/book/${doc.id}`} className="btn btn-primary" style={{ flex: 1, padding: '10px', fontWeight: 700 }}>Book Now</Link>
                            <button 
                              title="Quick Query"
                              onClick={() => setActiveChatDoc(doc)} 
