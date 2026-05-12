@@ -1,5 +1,4 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
-import { createBrowserClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 
 export function createClient() {
@@ -35,12 +34,6 @@ export function createClient() {
   )
 }
 
-// Client-side component Supabase instance
-export const createClientBrowser = () =>
-  createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  )
 
 // Admin client for bypass RLS in backend services (AI operations)
 import { createClient as createSupabaseClient } from '@supabase/supabase-js'

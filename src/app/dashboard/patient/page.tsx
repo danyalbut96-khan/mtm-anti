@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { createClientBrowser } from '@/lib/supabase';
+import { createClientBrowser } from '@/lib/supabaseBrowser';
 
 export default function PatientDashboard() {
   const [appointments, setAppointments] = useState<any[]>([
