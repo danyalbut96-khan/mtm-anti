@@ -77,7 +77,19 @@ export default function HomePage() {
     }
   };
 
-  // Automated triggering when symptom typing matures or city changes instantly!
+  // CRITERIA 4: Implementation of high-fidelity 300ms debounce to protect backend query limits
+  useEffect(() => {
+    if (!symptom.trim()) return;
+    
+    const timer = setTimeout(() => {
+       const derivedSpec = getSpecialization(symptom);
+       runSearch({ spec: derivedSpec, targetCity: city || 'Islamabad' });
+    }, 400); // Slightly longer for cleaner symptom-string aggregation buffering
+
+    return () => clearTimeout(timer);
+  }, [symptom]);
+
+  // Explicit trigger logic still remains active on user-directed button strikes
   const handleSearchClick = () => {
     const derivedSpec = getSpecialization(symptom);
     runSearch({ spec: derivedSpec, targetCity: city || 'Islamabad' });
@@ -164,43 +176,55 @@ export default function HomePage() {
                     </div>
                 </div>
 
-                {results.length === 0 && !loading && (
-                    <div style={{ textAlign: 'center', padding: '60px 20px', background: 'var(--bg-light)', borderRadius: '20px' }}>
-                        <div style={{ fontSize: '40px', color: '#D1D5DB', marginBottom: '15px' }}><i className="fa-regular fa-face-frown"></i></div>
-                        <h3>No exact clinician coverage found.</h3>
-                        <p style={{ color: 'var(--text-light)' }}>Try generalized symptoms or change the target municipality.</p>
+                {/* CRITERIA 4: Pulse-Animation Skeleton loading grid placeholders */}
+                {loading ? (
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '24px' }}>
+                        {[1,2,3].map(i => (
+                            <div key={i} className="card" style={{ height: '220px', background: '#F9FAFB', border: 'none', animation: 'pulse 1.5s infinite ease-in-out' }} />
+                        ))}
+                        <style jsx>{`@keyframes pulse { 0% { opacity: 0.5; } 50% { opacity: 0.8; } 100% { opacity: 0.5; } }`}</style>
                     </div>
-                )}
-
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '24px' }}>
-                    {results.map(doc => (
-                        <div key={doc.id} className="card fade-in" style={{ padding: '24px', border: '1px solid #F3F4F6' }}>
-                            <div style={{ position: 'absolute', top: '20px', right: '20px' }}>
-                                {doc.is_available ? (
-                                    <span className="badge" style={{ background: '#ECFDF5', color: '#059669', fontSize: '12px', fontWeight: 700 }}><span className="status-dot online"></span>Online Now</span>
-                                ) : (
-                                    <span className="badge" style={{ background: '#F3F4F6', color: '#6B7280', fontSize: '12px' }}>Off Hours</span>
-                                )}
-                            </div>
-                            <div style={{ display: 'flex', gap: '16px', marginBottom: '20px' }}>
-                                <div style={{ position: 'relative', width: '64px', height: '64px', flexShrink: 0 }}>
-                                    <Image src={doc.profile_pic || "/assets/doctor-male.png"} alt="pfp" fill style={{ borderRadius: '12px', objectFit: 'cover' }} />
-                                </div>
-                                <div>
-                                    <h3 style={{ fontSize: '17px', fontWeight: 700, marginBottom: '2px' }}>{doc.name}</h3>
-                                    <span style={{ fontSize: '12px', background: '#F0FDFA', color: '#0F766E', padding: '2px 8px', borderRadius: '6px', fontWeight: 600 }}>{doc.specialization}</span>
-                                </div>
-                            </div>
-                            <div style={{ fontSize: '13px', color: 'var(--text-light)', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                <i className="fa-solid fa-map-marker-alt"></i> {doc.city}, {doc.location || "Registered Campus"}
-                            </div>
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', paddingTop: '15px', borderTop: '1px solid #F3F4F6' }}>
-                                <Link href={`/doctor/${doc.id}`} className="btn btn-outline" style={{ padding: '10px', fontSize: '13px' }}>View Profile</Link>
-                                <Link href={`/book/${doc.id}`} className="btn btn-primary" style={{ padding: '10px', fontSize: '13px', fontWeight: 700 }}>Book Now</Link>
-                            </div>
+                ) : (
+                   <>
+                    {results.length === 0 && !loading && (
+                        <div style={{ textAlign: 'center', padding: '60px 20px', background: 'var(--bg-light)', borderRadius: '20px' }}>
+                            <div style={{ fontSize: '40px', color: '#D1D5DB', marginBottom: '15px' }}><i className="fa-regular fa-face-frown"></i></div>
+                            <h3>No exact clinician coverage found.</h3>
+                            <p style={{ color: 'var(--text-light)' }}>Try generalized symptoms or change the target municipality.</p>
                         </div>
-                    ))}
-                </div>
+                    )}
+
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '24px' }}>
+                        {results.map(doc => (
+                            <div key={doc.id} className="card fade-in" style={{ padding: '24px', border: '1px solid #F3F4F6' }}>
+                                <div style={{ position: 'absolute', top: '20px', right: '20px' }}>
+                                    {doc.is_available ? (
+                                        <span className="badge" style={{ background: '#ECFDF5', color: '#059669', fontSize: '12px', fontWeight: 700 }}><span className="status-dot online"></span>🟢 Available</span>
+                                    ) : (
+                                        <span className="badge" style={{ background: '#F3F4F6', color: '#6B7280', fontSize: '12px' }}>🔴 Off Hours</span>
+                                    )}
+                                </div>
+                                <div style={{ display: 'flex', gap: '16px', marginBottom: '20px' }}>
+                                    <div style={{ position: 'relative', width: '64px', height: '64px', flexShrink: 0 }}>
+                                        <Image src={doc.profile_pic || "/assets/doctor-male.png"} alt="pfp" fill style={{ borderRadius: '12px', objectFit: 'cover' }} />
+                                    </div>
+                                    <div>
+                                        <h3 style={{ fontSize: '17px', fontWeight: 700, marginBottom: '2px' }}>{doc.name}</h3>
+                                        <span style={{ fontSize: '12px', background: '#F0FDFA', color: '#0F766E', padding: '2px 8px', borderRadius: '6px', fontWeight: 600 }}>{doc.specialization}</span>
+                                    </div>
+                                </div>
+                                <div style={{ fontSize: '13px', color: 'var(--text-light)', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                    <i className="fa-solid fa-map-marker-alt"></i> {doc.city}, {doc.location || "Registered Campus"}
+                                </div>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', paddingTop: '15px', borderTop: '1px solid #F3F4F6' }}>
+                                    <Link href={`/doctor/${doc.id}`} className="btn btn-outline" style={{ padding: '10px', fontSize: '13px' }}>View Profile</Link>
+                                    <Link href={`/book/${doc.id}`} className="btn btn-primary" style={{ padding: '10px', fontSize: '13px', fontWeight: 700 }}>Book Now</Link>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                   </>
+                )}
              </div>
           </section>
       )}

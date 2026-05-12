@@ -35,7 +35,8 @@ export default function FindDoctorPage() {
     const supabase = createClientBrowser();
     const { data } = await supabase
       .from('doctors')
-      .select('*')
+      .select('id, name, specialization, city, rating, is_available, profile_pic, location')
+      .order('is_available', { ascending: false })
       .order('rating', { ascending: false });
     setDoctors(data || []);
     setLoading(false);
@@ -51,7 +52,7 @@ export default function FindDoctorPage() {
     setIsNearby(false);
     const supabase = createClientBrowser();
     
-    let query = supabase.from('doctors').select('*');
+    let query = supabase.from('doctors').select('id, name, specialization, city, rating, is_available, profile_pic, location');
 
     // Conditional appending based on 'all' bypass locks
     if (city && city !== 'All Cities' && city !== 'all') {
@@ -66,7 +67,9 @@ export default function FindDoctorPage() {
       query = query.ilike('consultation_type', `%${capitalizedType}%`);
     }
 
-    let { data, error } = await query.order('rating', { ascending: false });
+    let { data, error } = await query
+      .order('is_available', { ascending: false })
+      .order('rating', { ascending: false });
     
     // 2b. The Cluster fallback requirement loop
     if ((!data || data.length === 0) && city !== 'All Cities') {
@@ -74,17 +77,23 @@ export default function FindDoctorPage() {
             islamabad: ['Rawalpindi', 'Wah Cantt', 'Attock'],
             karachi: ['Hyderabad', 'Thatta'],
             lahore: ['Sheikhupura', 'Kasur', 'Gujranwala'],
-            rawalpindi: ['Islamabad', 'Wah Cantt']
+            peshawar: ['Mardan', 'Nowshera'],
+            multan: ['Bahawalpur', 'Sahiwal']
         };
         const cluster = nearbyCities[city.toLowerCase()];
         if (cluster) {
             setIsNearby(true);
             // Fallback query against cluster subset
-            let fallbackQuery = supabase.from('doctors').select('*').in('city', cluster);
+            let fallbackQuery = supabase
+                .from('doctors')
+                .select('id, name, specialization, city, rating, is_available, profile_pic, location')
+                .in('city', cluster);
             if (searchTerm && searchTerm !== 'All Specializations') {
                 fallbackQuery = fallbackQuery.ilike('specialization', `%${searchTerm}%`);
             }
-            const { data: fallbackData } = await fallbackQuery.order('rating', { ascending: false });
+            const { data: fallbackData } = await fallbackQuery
+                .order('is_available', { ascending: false })
+                .order('rating', { ascending: false });
             data = fallbackData;
         }
     }

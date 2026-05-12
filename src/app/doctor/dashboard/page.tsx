@@ -1,10 +1,58 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { createClientBrowser } from '@/lib/supabaseBrowser';
 
 export default function DoctorDashboard() {
-  const [isOnline, setIsOnline] = useState(true);
+  const [isOnline, setIsOnline] = useState(false);
+  const [doctorId, setDoctorId] = useState<string | null>(null);
+  const [loadingState, setLoadingState] = useState(false);
+
+  useEffect(() => {
+    const supabase = createClientBrowser();
+    const initializeDoctor = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+         setDoctorId(session.user.id);
+         // Load accurate current availability from source
+         const { data } = await supabase
+           .from('doctors')
+           .select('is_available')
+           .eq('id', session.user.id)
+           .single();
+         if (data) setIsOnline(data.is_available);
+      }
+    };
+    initializeDoctor();
+  }, []);
+
+  // CRITERIA 4: One-Click Instant Realtime Toggle Update
+  const handleToggle = async () => {
+     if (!doctorId) return;
+     const supabase = createClientBrowser();
+     const nextState = !isOnline;
+     setLoadingState(true);
+     // Optimistic Frontend Update immediately
+     setIsOnline(nextState);
+
+     try {
+        const { error } = await supabase
+          .from('doctors')
+          .update({ is_available: nextState })
+          .eq('id', doctorId);
+        
+        if (error) {
+           // Revert on push error
+           setIsOnline(!nextState);
+           console.error("Availability update failure:", error);
+        }
+     } catch(e) {
+        setIsOnline(!nextState);
+     } finally {
+        setLoadingState(false);
+     }
+  };
 
   return (
     <div className="dashboard-layout fade-in">
@@ -40,15 +88,15 @@ export default function DoctorDashboard() {
                   <p style={{ color: 'var(--text-light)' }}>Track patient metrics and schedule status.</p>
               </div>
               
-              {/* Availability Toggler Redesign */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '15px', background: 'white', padding: '12px 20px', borderRadius: '14px', border: '1px solid var(--border-color)' }}>
+              {/* CRITERIA 4: Live Database-Synced Availability Switcher */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '15px', background: 'white', padding: '12px 20px', borderRadius: '14px', border: '1px solid var(--border-color)', opacity: loadingState ? 0.6 : 1 }}>
                  <span style={{ fontSize: '14px', fontWeight: 600, color: isOnline ? 'var(--success-color)' : '#9CA3AF', display: 'flex', alignItems: 'center' }}>
                     <span className={isOnline ? "status-dot online" : "status-dot"} style={{ background: isOnline ? 'var(--success-color)' : '#D1D5DB' }}></span>
-                    {isOnline ? 'Accepting Patients' : 'Currently Offline'}
+                    {isOnline ? '🟢 Accepting Patients' : '🔴 Offline Mode'}
                  </span>
                  <div 
-                    onClick={() => setIsOnline(!isOnline)} 
-                    style={{ width: '46px', height: '24px', background: isOnline ? 'var(--primary-color)' : '#E5E7EB', borderRadius: '12px', padding: '3px', cursor: 'pointer', transition: '0.3s', position: 'relative' }}
+                    onClick={handleToggle} 
+                    style={{ width: '46px', height: '24px', background: isOnline ? 'var(--primary-color)' : '#E5E7EB', borderRadius: '12px', padding: '3px', cursor: loadingState ? 'wait' : 'pointer', transition: '0.3s', position: 'relative' }}
                  >
                     <div style={{ width: '18px', height: '18px', background: 'white', borderRadius: '50%', position: 'absolute', left: '3px', transform: isOnline ? 'translateX(22px)' : 'translateX(0)', transition: '0.3s', boxShadow: '0 1px 3px rgba(0,0,0,0.2)' }}></div>
                  </div>
