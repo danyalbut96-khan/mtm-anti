@@ -1,12 +1,62 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { createClientBrowser } from '@/lib/supabaseBrowser';
+import { useRouter } from 'next/navigation';
 
 export default function Navbar() {
+  const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
+  const [user, setUser] = useState<any>(null);
+  const [role, setRole] = useState<'patient' | 'doctor' | null>(null);
+  const [loading, setLoading] = useState(true);
 
   const closeMenu = () => setIsOpen(false);
+
+  useEffect(() => {
+    const supabase = createClientBrowser();
+    
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (session?.user) {
+         // Fast parallel lookup determining the specific role context
+         const [docRes, patRes] = await Promise.all([
+             supabase.from('doctors').select('name').eq('id', session.user.id).single(),
+             supabase.from('patients').select('name').eq('id', session.user.id).single()
+         ]);
+
+         if (docRes.data) {
+             setUser(docRes.data);
+             setRole('doctor');
+         } else if (patRes.data) {
+             setUser(patRes.data);
+             setRole('patient');
+         } else {
+             setUser({ name: session.user.email?.split('@')[0] });
+         }
+      } else {
+         setUser(null);
+         setRole(null);
+      }
+      setLoading(false);
+    };
+
+    checkAuth();
+
+    // Requirement: Watch Auth-State live across dynamic redirects
+    const { data: listener } = supabase.auth.onAuthStateChange(() => checkAuth());
+    
+    return () => listener.subscription.unsubscribe();
+  }, []);
+
+  const handleLogout = async () => {
+      const supabase = createClientBrowser();
+      await supabase.auth.signOut();
+      router.push('/');
+      router.refresh();
+  };
 
   return (
     <>
@@ -20,15 +70,32 @@ export default function Navbar() {
           <div className="nav-links">
             <Link href="/">Home</Link>
             <Link href="/find-doctor">Find Doctor</Link>
-            <Link href="/auth/signup?role=doctor">For Doctors</Link>
+            {(!user || role === 'patient') && <Link href="/auth/signup?role=doctor">For Doctors</Link>}
             <Link href="/support">AI Support</Link>
           </div>
 
-          <div className="nav-actions">
-            <Link href="/auth/login" className="btn btn-outline desktop-only">Sign In</Link>
-            <Link href="/auth/login" className="btn btn-primary desktop-only">Get Started</Link>
+          <div className="nav-actions" style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+            {loading ? (
+                <div style={{ width: '40px', height: '40px', border: '2px solid #F3F4F6', borderTop: '2px solid var(--primary-color)', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
+            ) : user ? (
+                <div className="desktop-only" style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                   <Link href={role === 'doctor' ? "/doctor/dashboard" : "/patient/dashboard"} className="btn btn-outline" style={{ display: 'flex', gap: '8px', alignItems: 'center', padding: '8px 15px', border: '1px solid #E5E7EB' }}>
+                       <div style={{ width: '24px', height: '24px', background: 'var(--primary-color)', color: 'white', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 800 }}>
+                           {user.name?.charAt(0).toUpperCase() || 'U'}
+                       </div>
+                       <span style={{ fontWeight: 600, fontSize: '14px' }}>Dashboard</span>
+                   </Link>
+                   <button onClick={handleLogout} className="btn" style={{ background: '#FEF2F2', color: '#DC2626', fontSize: '14px', padding: '8px 15px', border: 'none', borderRadius: '10px', cursor: 'pointer', fontWeight: 600 }}>
+                       Log Out
+                   </button>
+                </div>
+            ) : (
+                <>
+                  <Link href="/auth/login" className="btn btn-outline desktop-only">Sign In</Link>
+                  <Link href="/auth/signup" className="btn btn-primary desktop-only">Get Started</Link>
+                </>
+            )}
             
-            {/* Requirement Part 3: Interactive Hamburger toggle */}
             <button 
                className="hamburger-btn" 
                onClick={() => setIsOpen(!isOpen)}
@@ -40,45 +107,44 @@ export default function Navbar() {
         </div>
       </nav>
 
-      {/* Full Mobile Dropdown Drawer Requirement */}
+      {/* Full Mobile Dropdown Drawer */}
       {isOpen && (
         <div className="mobile-nav-drawer fade-in">
            <Link href="/" onClick={closeMenu}>Home</Link>
            <Link href="/find-doctor" onClick={closeMenu}>Find Doctor</Link>
-           <Link href="/auth/signup?role=doctor" onClick={closeMenu}>For Doctors</Link>
+           {(!user || role === 'patient') && <Link href="/auth/signup?role=doctor" onClick={closeMenu}>For Doctors</Link>}
            <Link href="/support" onClick={closeMenu}>AI Support</Link>
            <hr style={{ borderColor: 'var(--border-color)', opacity: 0.5 }} />
-           <Link href="/auth/login" className="btn btn-outline" onClick={closeMenu}>Sign In</Link>
+           {user ? (
+               <>
+                  <Link href={role === 'doctor' ? "/doctor/dashboard" : "/patient/dashboard"} onClick={closeMenu} style={{ fontWeight: 800, color: 'var(--primary-color)' }}>Go to Dashboard</Link>
+                  <button onClick={() => { handleLogout(); closeMenu(); }} style={{ textAlign: 'left', background: 'none', border: 'none', color: '#DC2626', fontWeight: 600, fontSize: '16px', padding: '10px 5px', cursor: 'pointer' }}>Log Out</button>
+               </>
+           ) : (
+               <Link href="/auth/login" className="btn btn-outline" onClick={closeMenu}>Sign In</Link>
+           )}
         </div>
       )}
 
       <style jsx>{`
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         .hamburger-btn {
             display: none;
-            background: none;
-            border: none;
-            font-size: 24px;
-            color: var(--text-color);
-            cursor: pointer;
-            padding: 5px;
-            width: 44px; height: 44px; /* Touch-target optimization Requirement */
+            background: none; border: none;
+            font-size: 24px; color: var(--text-color);
+            cursor: pointer; padding: 5px;
+            width: 44px; height: 44px;
             align-items: center; justify-content: center;
         }
         .mobile-nav-drawer {
-            position: fixed;
-            top: 70px; left: 0; width: 100%;
-            background: white;
-            box-shadow: var(--shadow-lg);
-            z-index: 999;
-            display: flex; flex-direction: column;
-            padding: 20px; gap: 15px;
-            border-bottom: 1px solid var(--border-color);
+            position: fixed; top: 70px; left: 0; width: 100%;
+            background: white; box-shadow: var(--shadow-lg);
+            z-index: 999; display: flex; flex-direction: column;
+            padding: 20px; gap: 15px; border-bottom: 1px solid var(--border-color);
         }
         .mobile-nav-drawer a {
-            font-weight: 600;
-            color: var(--text-color);
-            font-size: 16px;
-            padding: 10px 5px;
+            font-weight: 600; color: var(--text-color);
+            font-size: 16px; padding: 10px 5px;
         }
         @media (max-width: 768px) {
             .nav-links, .desktop-only { display: none !important; }

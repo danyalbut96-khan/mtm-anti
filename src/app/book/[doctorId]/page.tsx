@@ -16,6 +16,11 @@ function BookingContent({ doctorId }: { doctorId: string }) {
     problem_description: ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [minDate, setMinDate] = useState('');
+
+  useEffect(() => {
+    setMinDate(new Date().toISOString().split('T')[0]);
+  }, []);
 
   const handleBooking = async () => {
     const supabase = createClientBrowser();
@@ -92,13 +97,24 @@ function BookingContent({ doctorId }: { doctorId: string }) {
               <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                 <div className="form-group" style={{ margin: 0 }}>
                   <label className="form-label" style={{ fontWeight: 600 }}>Target Date</label>
-                  <input type="date" className="form-control" required onChange={(e) => setFormData({...formData, date: e.target.value})} />
+                  <input 
+                    type="date" 
+                    className="form-control" 
+                    required 
+                    min={minDate} 
+                    onChange={(e) => setFormData({...formData, date: e.target.value})} 
+                  />
                 </div>
                 <div className="form-group" style={{ margin: 0 }}>
                   <label className="form-label" style={{ fontWeight: 600 }}>Desired Time</label>
                   <select className="form-control" onChange={(e) => setFormData({...formData, time_slot: e.target.value})}>
                      <option value="10:00 AM">10:00 AM</option>
+                     <option value="11:00 AM">11:00 AM</option>
+                     <option value="12:00 PM">12:00 PM</option>
+                     <option value="01:00 PM">01:00 PM</option>
                      <option value="02:00 PM">02:00 PM</option>
+                     <option value="03:00 PM">03:00 PM</option>
+                     <option value="04:00 PM">04:00 PM</option>
                   </select>
                 </div>
                 <div className="form-group" style={{ margin: 0 }}>
