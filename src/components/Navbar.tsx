@@ -20,7 +20,7 @@ export default function Navbar() {
           <div className="nav-links">
             <Link href="/">Home</Link>
             <Link href="/find-doctor">Find Doctor</Link>
-            <Link href="/auth/signup">For Doctors</Link>
+            <Link href="/auth/signup?role=doctor">For Doctors</Link>
             <Link href="/support">AI Support</Link>
           </div>
 
@@ -45,7 +45,7 @@ export default function Navbar() {
         <div className="mobile-nav-drawer fade-in">
            <Link href="/" onClick={closeMenu}>Home</Link>
            <Link href="/find-doctor" onClick={closeMenu}>Find Doctor</Link>
-           <Link href="/auth/signup" onClick={closeMenu}>For Doctors</Link>
+           <Link href="/auth/signup?role=doctor" onClick={closeMenu}>For Doctors</Link>
            <Link href="/support" onClick={closeMenu}>AI Support</Link>
            <hr style={{ borderColor: 'var(--border-color)', opacity: 0.5 }} />
            <Link href="/auth/login" className="btn btn-outline" onClick={closeMenu}>Sign In</Link>

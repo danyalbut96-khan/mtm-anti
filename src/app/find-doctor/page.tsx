@@ -3,219 +3,211 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { createClientBrowser } from '@/lib/supabaseBrowser';
 
-export default function SearchPage() {
-  const [searchTerm, setSearchTerm] = useState('Cardiologist');
-  const [city, setCity] = useState('Islamabad');
+const SPECIALIZATIONS = [
+  "All Specializations",
+  "Cardiologist", "Dermatologist", "Orthopedic", "Gynecologist", "Neurologist", 
+  "Pediatrician", "General Physician", "Psychiatrist", "ENT Specialist", 
+  "Endocrinologist", "Gastroenterologist", "Ophthalmologist", "Urologist", 
+  "Pulmonologist", "Nutritionist"
+];
+
+const CITIES = [
+  "All Cities",
+  "Islamabad", "Rawalpindi", "Lahore", "Karachi", "Peshawar", 
+  "Quetta", "Multan", "Faisalabad", "Sialkot", "Wah Cantt"
+];
+
+export default function FindDoctorPage() {
+  const [searchTerm, setSearchTerm] = useState('All Specializations');
+  const [city, setCity] = useState('All Cities');
+  const [type, setType] = useState('all');
+  
   const [doctors, setDoctors] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [isNearby, setIsNearby] = useState(false);
-  const [activeChatDoc, setActiveChatDoc] = useState<any | null>(null);
-  const [miniChatInput, setMiniChatInput] = useState('');
-  const [chatLogs, setChatLogs] = useState<Record<string, any[]>>({});
 
-  const handleSearch = async () => {
+  // Requirement 2 Default State: Fetch All Doctors instantly
+  const fetchAllDoctors = async () => {
     setLoading(true);
     setIsNearby(false);
-    try {
-      const res = await fetch(`/api/doctors/search?specialization=${searchTerm}&city=${city}`);
-      const data = await res.json();
-      setDoctors(data.doctors || []);
-      if (data.isNearbyFallback) {
-        setIsNearby(true);
-      }
-    } catch (error) {
-      console.error("Fetch Failure");
-    } finally {
-      setLoading(false);
-    }
+    const supabase = createClientBrowser();
+    const { data } = await supabase
+      .from('doctors')
+      .select('*')
+      .order('rating', { ascending: false });
+    setDoctors(data || []);
+    setLoading(false);
   };
 
   useEffect(() => {
-    handleSearch();
+    fetchAllDoctors();
   }, []);
 
-  return (
-    <div className="section-bg" style={{ minHeight: '100vh' }}>
-      <div className="container section fade-in">
-        
-        {/* Optimized Top Mini-Search Bar for Results View */}
-        <div style={{ background: 'white', padding: '10px', borderRadius: '16px', boxShadow: 'var(--shadow-md)', display: 'flex', gap: '8px', marginBottom: '40px', border: '1px solid rgba(0,0,0,0.03)'}}>
-          <div style={{ flex: 2, display: 'flex', alignItems: 'center', background: '#F9FAFB', borderRadius: '10px', padding: '0 15px' }}>
-            <i className="fa-solid fa-magnifying-glass" style={{ color: 'var(--text-light)', opacity: 0.6 }}></i>
-            <input 
-              type="text" 
-              className="form-control" 
-              style={{ border: 'none', background: 'transparent', boxShadow: 'none' }} 
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Specialization..."
-            />
-          </div>
-          <div style={{ flex: 1, display: 'flex', alignItems: 'center', background: '#F9FAFB', borderRadius: '10px', padding: '0 15px' }}>
-            <i className="fa-solid fa-location-dot" style={{ color: 'var(--text-light)', opacity: 0.6 }}></i>
-            <input 
-              type="text" 
-              className="form-control" 
-              style={{ border: 'none', background: 'transparent', boxShadow: 'none' }} 
-              value={city}
-              onChange={(e) => setCity(e.target.value)}
-              placeholder="City"
-            />
-          </div>
-          <button className="btn btn-primary" onClick={handleSearch} disabled={loading} style={{ padding: '0 30px', borderRadius: '10px' }}>
-            {loading ? '...' : 'Update'}
-          </button>
-        </div>
+  // Requirement 2: Advanced Dynamic Filter Execution
+  const searchDoctors = async () => {
+    setLoading(true);
+    setIsNearby(false);
+    const supabase = createClientBrowser();
+    
+    let query = supabase.from('doctors').select('*');
 
-        <div style={{ display: 'grid', gridTemplateColumns: '280px 1fr', gap: '32px' }} className="responsive-grid-stack">
-          {/* Sidebar Filter Refinement */}
-          <aside>
-             <div className="card" style={{ border: 'none', boxShadow: 'var(--shadow-sm)', position: 'sticky', top: '100px' }}>
-                <h4 style={{ marginBottom: '16px', color: '#111827' }}>Refine Results</h4>
-                <div style={{ marginBottom: '24px' }}>
-                    <div style={{ fontSize: '13px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-light)', marginBottom: '12px' }}>Mode</div>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px', cursor: 'pointer', fontSize: '15px' }}>
-                        <input type="checkbox" defaultChecked style={{ accentColor: 'var(--primary-color)' }} /> 🌐 Tele-Health Online
-                    </label>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', fontSize: '15px' }}>
-                        <input type="checkbox" defaultChecked style={{ accentColor: 'var(--primary-color)' }} /> 🏥 In-Clinic Local
-                    </label>
-                </div>
-                <hr style={{ border: 'none', borderTop: '1px solid #F3F4F6', margin: '20px 0' }} />
-                <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-light)' }}>Status</div>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '10px', fontSize: '15px' }}>
-                    <input type="checkbox" defaultChecked style={{ accentColor: 'var(--primary-color)' }} /> Show Available Only
-                </label>
-             </div>
-          </aside>
+    // Conditional appending based on 'all' bypass locks
+    if (city && city !== 'All Cities' && city !== 'all') {
+      query = query.ilike('city', `%${city}%`);
+    }
+    if (searchTerm && searchTerm !== 'All Specializations' && searchTerm !== 'all') {
+      query = query.ilike('specialization', `%${searchTerm}%`);
+    }
+    if (type && type !== 'all') {
+      // Convert to appropriate capitalized matches based on DB schema
+      const capitalizedType = type.charAt(0).toUpperCase() + type.slice(1);
+      query = query.ilike('consultation_type', `%${capitalizedType}%`);
+    }
 
-          <main>
-            <div style={{ display: 'flex', flexDirection: 'column', marginBottom: '24px' }}>
-              <h3 style={{ fontSize: '22px', fontWeight: 700 }}>{doctors.length} Matches Found</h3>
-              {isNearby && (
-                <p style={{ color: 'var(--warning-color)', fontSize: '14px', fontWeight: 600, marginTop: '4px' }}>
-                  <i className="fa-solid fa-circle-info"></i> No exact matches in {city}. Showing doctors in nearby cities.
-                </p>
-              )}
-            </div>
-
-            {doctors.length === 0 && !loading && (
-                <div style={{ background: 'white', padding: '60px 20px', textAlign: 'center', borderRadius: '16px', boxShadow: 'var(--shadow-sm)' }}>
-                    <div style={{ fontSize: '40px', color: '#E5E7EB', marginBottom: '15px' }}><i className="fa-regular fa-folder-open"></i></div>
-                    <h4 style={{ color: 'var(--text-color)' }}>No Real-Time Data</h4>
-                    <p style={{ color: 'var(--text-light)', fontSize: '14px', maxWidth: '300px', margin: '5px auto 0' }}>Populate your Supabase schema and database records to initialize result streaming.</p>
-                </div>
-            )}
-
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '24px' }}>
-              {doctors.map((doc) => (
-                <div key={doc.id} className="card" style={{ padding: '24px' }}>
-                   
-                   {/* Online Availability Status Dot */}
-                   <div style={{ position: 'absolute', top: '20px', right: '20px' }}>
-                        {doc.is_available ? (
-                           <span className="badge badge-online"><span className="status-dot online"></span>Online</span>
-                        ) : (
-                           <span className="badge" style={{ background: '#F3F4F6', color: '#6B7280' }}>Offline</span>
-                        )}
-                   </div>
-
-                   <div style={{ display: 'flex', gap: '16px', marginBottom: '20px' }}>
-                        <div style={{ position: 'relative', width: '70px', height: '70px', flexShrink: 0 }}>
-                           <Image 
-                             src={doc.profile_pic || "/assets/doctor-male.png"} 
-                             alt="PFP" 
-                             fill 
-                             style={{ borderRadius: '12px', objectFit: 'cover', border: '2px solid #F3F4F6' }}
-                           />
-                        </div>
-                        <div style={{ paddingTop: '4px' }}>
-                            <h3 style={{ fontSize: '18px', fontWeight: 700, marginBottom: '2px' }}>{doc.name}</h3>
-                            <span style={{ fontSize: '13px', background: '#F0FDFA', color: '#0F766E', padding: '3px 8px', borderRadius: '6px', fontWeight: 600 }}>{doc.specialization}</span>
-                            
-                            {/* Rating Stars Redesign */}
-                            <div className="rating-stars" style={{ marginTop: '8px' }}>
-                                <i className="fa-solid fa-star"></i>
-                                <i className="fa-solid fa-star"></i>
-                                <i className="fa-solid fa-star"></i>
-                                <i className="fa-solid fa-star"></i>
-                                <i className="fa-solid fa-star-half-stroke"></i>
-                                <span style={{ color: 'var(--text-light)', fontSize: '12px', marginLeft: '4px' }}>({doc.rating || "5.0"})</span>
-                            </div>
-                        </div>
-                   </div>
-
-                   <div style={{ fontSize: '14px', color: 'var(--text-light)', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <i className="fa-solid fa-location-dot" style={{ color: '#9CA3AF' }}></i> {doc.city}, {doc.location || "Main Campus"}
-                   </div>
-
-                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.5fr', gap: '12px', borderTop: '1px solid #F3F4F6', paddingTop: '20px' }}>
-                        <Link href={`/doctor/${doc.id}`} className="btn btn-outline" style={{ padding: '10px' }}>Profile</Link>
-                        <div style={{ display: 'flex', gap: '8px' }}>
-                           <Link href={`/book/${doc.id}`} className="btn btn-primary" style={{ flex: 1, padding: '10px', fontWeight: 700 }}>Book Now</Link>
-                           <button 
-                             title="Quick Query"
-                             onClick={() => setActiveChatDoc(doc)} 
-                             style={{ width: '45px', background: '#F0FDFA', border: 'none', color: '#0D9488', borderRadius: '10px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px' }}
-                           >
-                             <i className="fa-solid fa-comment-dots"></i>
-                           </button>
-                        </div>
-                   </div>
-                </div>
-              ))}
-            </div>
-          </main>
-        </div>
-
-        {/* Floating Mini-Chat Widget Integration per Phase 3 */}
-        {activeChatDoc && (
-           <div className="fade-in" style={{ position: 'fixed', bottom: '20px', right: '20px', width: '340px', height: '400px', background: 'white', borderRadius: '16px', boxShadow: 'var(--shadow-lg)', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', overflow: 'hidden', zIndex: 2000 }}>
-              <div style={{ background: 'var(--primary-color)', color: 'white', padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div style={{ fontWeight: 600, fontSize: '14px' }}>Chat with Dr. {activeChatDoc.name.split(' ').pop()}</div>
-                  <i className="fa-solid fa-xmark" style={{ cursor: 'pointer' }} onClick={() => setActiveChatDoc(null)}></i>
-              </div>
-              <div style={{ flex: 1, background: '#F9FAFB', padding: '15px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                  <div style={{ alignSelf: 'flex-start', background: 'white', padding: '8px 12px', borderRadius: '10px', borderBottomLeftRadius: 0, fontSize: '13px', border: '1px solid #E5E7EB' }}>
-                      Hello! How can I help you specifically today?
-                  </div>
-                  {(chatLogs[activeChatDoc.id] || []).map((log: any, i: number) => (
-                      <div key={i} style={{
-                          alignSelf: log.role === 'user' ? 'flex-end' : 'flex-start',
-                          background: log.role === 'user' ? 'var(--primary-color)' : 'white',
-                          color: log.role === 'user' ? 'white' : 'var(--text-color)',
-                          padding: '8px 12px', borderRadius: '10px',
-                          fontSize: '13px',
-                          border: log.role === 'user' ? 'none' : '1px solid #E5E7EB'
-                      }}>
-                          {log.content}
-                      </div>
-                  ))}
-              </div>
-              <div style={{ padding: '10px', background: 'white', borderTop: '1px solid #E5E7EB', display: 'flex', gap: '6px' }}>
-                  <input 
-                    type="text" 
-                    className="form-control" 
-                    style={{ padding: '8px 12px', fontSize: '13px', borderRadius: '8px' }} 
-                    placeholder="Type a quick message..."
-                    value={miniChatInput}
-                    onChange={(e) => setMiniChatInput(e.target.value)}
-                    onKeyDown={(e) => { if(e.key === 'Enter') {
-                        const docId = activeChatDoc.id;
-                        setChatLogs(p => ({...p, [docId]: [...(p[docId]||[]), {role:'user', content: miniChatInput}, {role:'ai', content:"Got it! The doctor will respond soon."}]}));
-                        setMiniChatInput('');
-                    }}}
-                  />
-              </div>
-           </div>
-        )}
-      </div>
-      <style jsx>{`
-        @media (max-width: 768px) {
-          .responsive-grid-stack { grid-template-columns: 1fr !important; }
-          aside { display: none; }
+    let { data, error } = await query.order('rating', { ascending: false });
+    
+    // 2b. The Cluster fallback requirement loop
+    if ((!data || data.length === 0) && city !== 'All Cities') {
+        const nearbyCities: Record<string, string[]> = {
+            islamabad: ['Rawalpindi', 'Wah Cantt', 'Attock'],
+            karachi: ['Hyderabad', 'Thatta'],
+            lahore: ['Sheikhupura', 'Kasur', 'Gujranwala'],
+            rawalpindi: ['Islamabad', 'Wah Cantt']
+        };
+        const cluster = nearbyCities[city.toLowerCase()];
+        if (cluster) {
+            setIsNearby(true);
+            // Fallback query against cluster subset
+            let fallbackQuery = supabase.from('doctors').select('*').in('city', cluster);
+            if (searchTerm && searchTerm !== 'All Specializations') {
+                fallbackQuery = fallbackQuery.ilike('specialization', `%${searchTerm}%`);
+            }
+            const { data: fallbackData } = await fallbackQuery.order('rating', { ascending: false });
+            data = fallbackData;
         }
+    }
+
+    setDoctors(data || []);
+    setLoading(false);
+  };
+
+  return (
+    <div className="section-bg" style={{ minHeight: '100vh', paddingBottom: '60px' }}>
+      
+      {/* Sticky Dynamic Filters Header */}
+      <div style={{ background: 'white', borderBottom: '1px solid #F3F4F6', padding: '20px 0', position: 'sticky', top: 0, zIndex: 50, boxShadow: 'var(--shadow-sm)' }}>
+         <div className="container" style={{ display: 'flex', gap: '15px', flexWrap: 'wrap', alignItems: 'center' }}>
+             <h3 style={{ fontWeight: 800, marginRight: '20px' }}>Search Grid</h3>
+             
+             <select 
+               className="form-control" 
+               style={{ width: 'auto', minWidth: '200px', background: '#F9FAFB' }}
+               value={searchTerm}
+               onChange={(e) => setSearchTerm(e.target.value)}
+             >
+                 {SPECIALIZATIONS.map(s => <option key={s} value={s}>{s}</option>)}
+             </select>
+
+             <select 
+               className="form-control" 
+               style={{ width: 'auto', minWidth: '180px', background: '#F9FAFB' }}
+               value={city}
+               onChange={(e) => setCity(e.target.value)}
+             >
+                 {CITIES.map(c => <option key={c} value={c}>{c}</option>)}
+             </select>
+
+             <select 
+               className="form-control" 
+               style={{ width: 'auto', minWidth: '150px', background: '#F9FAFB' }}
+               value={type}
+               onChange={(e) => setType(e.target.value)}
+             >
+                 <option value="all">All Modes</option>
+                 <option value="online">Online</option>
+                 <option value="physical">Physical</option>
+             </select>
+
+             <button className="btn btn-primary" onClick={searchDoctors} disabled={loading} style={{ padding: '10px 25px', borderRadius: '10px', marginLeft: 'auto' }}>
+                 {loading ? <i className="fa-solid fa-spinner fa-spin"></i> : 'Apply Filters'}
+             </button>
+         </div>
+      </div>
+
+      <div className="container" style={{ paddingTop: '40px' }}>
+          <div style={{ marginBottom: '25px' }}>
+              <h1 style={{ fontSize: '28px', fontWeight: 800 }}>
+                  {searchTerm === 'All Specializations' && city === 'All Cities' ? 'Listing All Providers' : 'Refined Search Results'}
+              </h1>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '5px' }}>
+                  <span style={{ color: 'var(--text-light)', fontSize: '15px' }}>Showing {doctors.length} specialists</span>
+                  {isNearby && (
+                      <span className="badge" style={{ background: '#FEF3C7', color: '#D97706', fontWeight: 700, fontSize: '12px' }}>
+                          <i className="fa-solid fa-circle-info"></i> Displaying Proximate Clusters
+                      </span>
+                  )}
+              </div>
+          </div>
+
+          {doctors.length === 0 && !loading && (
+              <div style={{ background: 'white', padding: '80px 20px', textAlign: 'center', borderRadius: '20px', boxShadow: 'var(--shadow-sm)' }}>
+                  <div style={{ fontSize: '48px', color: '#E5E7EB', marginBottom: '20px' }}><i className="fa-solid fa-user-slash"></i></div>
+                  <h3 style={{ marginBottom: '10px' }}>No Matching Clinicians</h3>
+                  <p style={{ color: 'var(--text-light)' }}>We could not locate doctors matching these specific criteria.</p>
+                  <button onClick={fetchAllDoctors} className="btn btn-outline" style={{ marginTop: '20px' }}>Reset Filters</button>
+              </div>
+          )}
+
+          {/* REQUIREMENT: Desktop 3 / Tablet 2 / Mobile 1 grid layout enforced via CSS below */}
+          <div className="doctors-directory-grid">
+              {doctors.map(doc => (
+                 <div key={doc.id} className="card fade-in" style={{ padding: '24px', border: 'none', boxShadow: 'var(--shadow-sm)' }}>
+                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
+                         <div style={{ position: 'relative', width: '68px', height: '68px' }}>
+                             <Image src={doc.profile_pic || "/assets/doctor-male.png"} alt="doc" fill style={{ borderRadius: '14px', objectFit: 'cover' }} />
+                         </div>
+                         <div className="badge" style={{ height: 'fit-content', background: doc.is_available ? '#ECFDF5' : '#F3F4F6', color: doc.is_available ? '#059669' : '#6B7280', fontWeight: 700 }}>
+                             <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: doc.is_available ? '#10B981' : '#9CA3AF', marginRight: '6px' }}></span>
+                             {doc.is_available ? 'Available' : 'Unavailable'}
+                         </div>
+                     </div>
+                     
+                     <h3 style={{ fontSize: '18px', fontWeight: 800, marginBottom: '4px' }}>{doc.name}</h3>
+                     <div style={{ fontSize: '13px', fontWeight: 700, color: '#0D9488', background: '#F0FDFA', display: 'inline-block', padding: '3px 10px', borderRadius: '6px', marginBottom: '12px' }}>
+                         {doc.specialization}
+                     </div>
+
+                     <div style={{ fontSize: '14px', color: 'var(--text-light)', display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+                         <i className="fa-solid fa-location-dot" style={{ width: '14px' }}></i> {doc.city}
+                     </div>
+                     <div style={{ fontSize: '14px', color: 'var(--text-light)', display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '15px' }}>
+                         <i className="fa-solid fa-star" style={{ color: '#F59E0B', width: '14px' }}></i> {doc.rating || 5.0} Rating Score
+                     </div>
+
+                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', paddingTop: '20px', borderTop: '1px solid #F3F4F6', marginTop: '10px' }}>
+                         <Link href={`/doctor/${doc.id}`} className="btn btn-outline" style={{ fontSize: '13px', padding: '12px 0', textAlign: 'center', display: 'block', borderRadius: '10px', fontWeight: 700 }}>View Profile</Link>
+                         <Link href={`/book/${doc.id}`} className="btn btn-primary" style={{ fontSize: '13px', padding: '12px 0', textAlign: 'center', display: 'block', borderRadius: '10px', fontWeight: 700 }}>Book Now</Link>
+                     </div>
+                 </div>
+              ))}
+          </div>
+      </div>
+
+      <style jsx>{`
+         .doctors-directory-grid {
+             display: grid;
+             grid-template-columns: repeat(3, 1fr);
+             gap: 24px;
+         }
+         @media (max-width: 1024px) {
+             .doctors-directory-grid { grid-template-columns: repeat(2, 1fr); }
+         }
+         @media (max-width: 640px) {
+             .doctors-directory-grid { grid-template-columns: 1fr; }
+             select { width: 100% !important; }
+         }
       `}</style>
     </div>
   );

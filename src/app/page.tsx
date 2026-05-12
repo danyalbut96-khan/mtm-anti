@@ -195,8 +195,8 @@ export default function HomePage() {
                                 <i className="fa-solid fa-map-marker-alt"></i> {doc.city}, {doc.location || "Registered Campus"}
                             </div>
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', paddingTop: '15px', borderTop: '1px solid #F3F4F6' }}>
-                                <Link href={`/doctor/${doc.id}`} className="btn btn-outline" style={{ padding: '10px', fontSize: '13px' }}>Profile</Link>
-                                <Link href={`/book/${doc.id}`} className="btn btn-primary" style={{ padding: '10px', fontSize: '13px', fontWeight: 700 }}>Book Visit</Link>
+                                <Link href={`/doctor/${doc.id}`} className="btn btn-outline" style={{ padding: '10px', fontSize: '13px' }}>View Profile</Link>
+                                <Link href={`/book/${doc.id}`} className="btn btn-primary" style={{ padding: '10px', fontSize: '13px', fontWeight: 700 }}>Book Now</Link>
                             </div>
                         </div>
                     ))}

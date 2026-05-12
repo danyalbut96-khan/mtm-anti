@@ -52,7 +52,7 @@ export default function RootLayout({
                 <ul>
                   {/* Requirement: Canonical Paths mapped strictly */}
                   <li><Link href="/find-doctor">Search Index</Link></li>
-                  <li><Link href="/auth/signup">Provider Sign Up</Link></li>
+                  <li><Link href="/auth/signup?role=doctor">Provider Sign Up</Link></li>
                   <li><Link href="/support">AI Diagnostics</Link></li>
                 </ul>
               </div>
