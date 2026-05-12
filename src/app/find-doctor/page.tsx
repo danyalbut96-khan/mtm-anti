@@ -28,7 +28,55 @@ export default function FindDoctorPage() {
   const [loading, setLoading] = useState(false);
   const [isNearby, setIsNearby] = useState(false);
 
-  // Requirement 2 Default State: Fetch All Doctors instantly
+  // Proximity Mapping System for Pakistan Cities
+  const CITY_COORDS = [
+    { name: 'Islamabad', lat: 33.6844, lon: 73.0479 },
+    { name: 'Rawalpindi', lat: 33.5651, lon: 73.0169 },
+    { name: 'Lahore', lat: 31.5204, lon: 74.3587 },
+    { name: 'Karachi', lat: 24.8607, lon: 67.0011 },
+    { name: 'Faisalabad', lat: 31.4504, lon: 73.1350 },
+    { name: 'Multan', lat: 30.1575, lon: 71.5249 },
+    { name: 'Peshawar', lat: 34.0151, lon: 71.5249 },
+    { name: 'Quetta', lat: 30.1798, lon: 66.9750 }
+  ];
+
+  const detectLocationAndFetch = () => {
+     if (!("geolocation" in navigator)) {
+         fetchAllDoctors();
+         return;
+     }
+     
+     navigator.geolocation.getCurrentPosition((pos) => {
+         const { latitude, longitude } = pos.coords;
+         let closestCity = 'All Cities';
+         let minDistance = Infinity;
+
+         CITY_COORDS.forEach(c => {
+             const dist = Math.sqrt(Math.pow(c.lat - latitude, 2) + Math.pow(c.lon - longitude, 2));
+             if (dist < minDistance) {
+                 minDistance = dist;
+                 closestCity = c.name;
+             }
+         });
+
+         // Threshold validation ensuring we are actually inside region boundaries
+         if (minDistance < 3.0) { // Rough bounding box radius ~300km
+             setCity(closestCity);
+             // Explicit immediate execution injection
+             setTimeout(() => performSearchWithArgs(closestCity, searchTerm, type), 100);
+         } else {
+             fetchAllDoctors();
+         }
+     }, () => {
+         fetchAllDoctors(); // Fallback on rejection
+     });
+  };
+
+  useEffect(() => {
+    detectLocationAndFetch();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const fetchAllDoctors = async () => {
     setLoading(true);
     setIsNearby(false);
@@ -42,9 +90,36 @@ export default function FindDoctorPage() {
     setLoading(false);
   };
 
-  useEffect(() => {
-    fetchAllDoctors();
-  }, []);
+  const performSearchWithArgs = async (targetCity: string, targetSpec: string, targetType: string) => {
+    setLoading(true);
+    setIsNearby(false);
+    const supabase = createClientBrowser();
+    let query = supabase.from('doctors').select('id, name, specialization, city, rating, is_available, profile_pic, location');
+
+    if (targetCity && targetCity !== 'All Cities') query = query.ilike('city', `%${targetCity}%`);
+    if (targetSpec && targetSpec !== 'All Specializations') query = query.ilike('specialization', `%${targetSpec}%`);
+    if (targetType && targetType !== 'all') {
+        query = query.ilike('consultation_type', `%${targetType.charAt(0).toUpperCase() + targetType.slice(1)}%`);
+    }
+
+    let { data } = await query.order('is_available', { ascending: false }).order('rating', { ascending: false });
+    
+    if ((!data || data.length === 0) && targetCity !== 'All Cities') {
+        const clusterMap: Record<string, string[]> = {
+            islamabad: ['Rawalpindi', 'Wah Cantt'], karachi: ['Hyderabad'], lahore: ['Gujranwala']
+        };
+        const cluster = clusterMap[targetCity.toLowerCase()];
+        if (cluster) {
+            setIsNearby(true);
+            let fallback = supabase.from('doctors').select('id, name, specialization, city, rating, is_available, profile_pic, location').in('city', cluster);
+            if (targetSpec !== 'All Specializations') fallback = fallback.ilike('specialization', `%${targetSpec}%`);
+            const { data: fData } = await fallback.order('is_available', { ascending: false });
+            data = fData;
+        }
+    }
+    setDoctors(data || []);
+    setLoading(false);
+  };
 
   // Requirement 2: Advanced Dynamic Filter Execution
   const searchDoctors = async () => {
