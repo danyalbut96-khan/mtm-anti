@@ -2,10 +2,9 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase';
 import { Resend } from 'resend';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-
 export async function POST(request: Request) {
   try {
+    const resend = new Resend(process.env.RESEND_API_KEY || 're_placeholder');
     const { doctor_id, patient_id, date, time_slot, type, problem_description } = await request.json();
     const supabase = createClient();
 

@@ -2,13 +2,13 @@ import { NextResponse } from 'next/server';
 import { getServiceSupabase } from '@/lib/supabase';
 import OpenAI from 'openai';
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENROUTER_API_KEY || '',
-  baseURL: "https://openrouter.ai/api/v1",
-});
-
 export async function POST(request: Request) {
   try {
+    const openai = new OpenAI({
+      apiKey: process.env.OPENROUTER_API_KEY || 'placeholder_key_for_build',
+      baseURL: "https://openrouter.ai/api/v1",
+    });
+
     const { patient_id, doctor_id, content } = await request.json();
     const supabase = getServiceSupabase();
 
