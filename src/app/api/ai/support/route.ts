@@ -67,11 +67,6 @@ export async function POST(request: Request) {
        model: "google/gemini-flash-1.5",
        messages: [
           { role: "system", content: CHAT_PROMPT },
-          ...history.map((h: string) => {
-              const isUser = h.toLowerCase().startsWith('user:');
-              const content = h.includes(':') ? h.substring(h.indexOf(':') + 1).trim() : h;
-              return { role: isUser ? 'user' : 'assistant', content: content || '...' };
-           }),
           { role: "user", content: `${message} ${doctors.length > 0 ? `(CONTEXTUAL METADATA: ${JSON.stringify(doctors)})` : ''}` }
        ]
     });
@@ -82,8 +77,11 @@ export async function POST(request: Request) {
     });
 
   } catch (error: any) {
-    console.error("Chat Logic Breached:", error);
-    // Fallback dynamic apology, avoid hardcoded rigid instructions.
-    return NextResponse.json({ response: "Apologies. Connection vector momentarily unstable. Could you re-phrase that query?" });
+    console.error("System Node Fault Details:", error);
+    // EXPLICIT ERROR REPORTING: Propagate real error code to diagnostic surface
+    const diagnosticReport = error?.message || "Unknown network interface collision.";
+    return NextResponse.json({ 
+        response: `[SYSTEM ERROR DIAGNOSTIC]: ${diagnosticReport}. Ensure your API keys are loaded correctly in Vercel.` 
+    });
   }
 }
