@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 
 export default function SupportPage() {
   const [messages, setMessages] = useState([
-    { role: 'ai', content: 'Hello! I am the SmartDoc medical assistant. How can I help evaluate your symptoms or guide your booking today?' }
+    { role: 'ai', content: 'Hi! I\'m your Smart Doctor Assistant. How can I help you today?' }
   ]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
@@ -21,14 +21,18 @@ export default function SupportPage() {
 
     const currentMsg = input.trim();
     setInput('');
-    setMessages(prev => [...prev, { role: 'user', content: currentMsg }]);
+    const updatedMsgs = [...messages, { role: 'user', content: currentMsg }];
+    setMessages(updatedMsgs);
     setIsTyping(true);
 
     try {
       const res = await fetch('/api/ai/support', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: currentMsg })
+        body: JSON.stringify({ 
+          message: currentMsg,
+          history: updatedMsgs.slice(-6).map(m => `${m.role}: ${m.content}`)
+        })
       });
       
       const data = await res.json();
