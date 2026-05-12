@@ -28,10 +28,9 @@ export async function POST(request: Request) {
     const analyzeResponse = await openai.chat.completions.create({
       model: "google/gemini-flash-1.5",
       messages: [
-        { role: "system", content: ANALYZER_PROMPT },
+        { role: "system", content: ANALYZER_PROMPT + "\nReturn VALID JSON WITHOUT markdown tags." },
         { role: "user", content: `Current statement: "${message}". Analyze.` }
-      ],
-      response_format: { type: "json_object" }
+      ]
     });
 
     let analysis: any = {};
@@ -68,8 +67,12 @@ export async function POST(request: Request) {
        model: "google/gemini-flash-1.5",
        messages: [
           { role: "system", content: CHAT_PROMPT },
-          ...history.map((h: string) => ({ role: h.startsWith('user') ? 'user' : 'assistant', content: h.split(': ').slice(1).join(': ') })),
-          { role: "user", content: `${message} (CONTEXTUAL METADATA: ${JSON.stringify(doctors)})` }
+          ...history.map((h: string) => {
+              const isUser = h.toLowerCase().startsWith('user:');
+              const content = h.includes(':') ? h.substring(h.indexOf(':') + 1).trim() : h;
+              return { role: isUser ? 'user' : 'assistant', content: content || '...' };
+           }),
+          { role: "user", content: `${message} ${doctors.length > 0 ? `(CONTEXTUAL METADATA: ${JSON.stringify(doctors)})` : ''}` }
        ]
     });
 
