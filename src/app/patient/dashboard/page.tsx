@@ -160,6 +160,7 @@ export default function PatientDashboard() {
                                 {a.status === 'scheduled' && (
                                    <button onClick={() => handleCancel(a.id)} className="btn" style={{ background: '#FFF1F2', color: '#E11D48', border: '1px solid #FECDD3', borderRadius: '10px', padding: '8px 15px', fontSize: '13px', fontWeight: 600 }}>Cancel</button>
                                 )}
+                                <Link href={`/chat?doctorId=${a.doctor_id}`} className="btn btn-outline" style={{ borderRadius: '10px', padding: '8px 15px', fontSize: '13px', fontWeight: 600 }}>Message</Link>
                                 {a.type === 'online' && a.status === 'scheduled' && (
                                     <button className="btn" style={{ background: 'var(--primary-color)', color: 'white', padding: '8px 16px', fontSize: '13px', borderRadius: '10px', fontWeight: 700 }}>Join Call</button>
                                 )}
