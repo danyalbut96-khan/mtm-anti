@@ -17,7 +17,7 @@ export default function SearchPage() {
       const data = await res.json();
       setDoctors(data.doctors || []);
     } catch (error) {
-      console.error("Search fetch failed");
+      console.error("Fetch Failure");
     } finally {
       setLoading(false);
     }
@@ -29,94 +29,117 @@ export default function SearchPage() {
 
   return (
     <div className="section-bg" style={{ minHeight: '100vh' }}>
-      <div className="container section">
+      <div className="container section fade-in">
         
-        {/* Modernized Search Header */}
-        <div className="search-header-box" style={{ background: 'white', padding: '15px', borderRadius: '12px', border: '1px solid var(--border-color)', display: 'flex', gap: '10px', marginBottom: '25px'}}>
-          <div style={{ flex: 2, position: 'relative' }}>
-            <i className="fa-solid fa-magnifying-glass" style={{ position: 'absolute', left: '15px', top: '15px', color: 'var(--text-light)' }}></i>
+        {/* Optimized Top Mini-Search Bar for Results View */}
+        <div style={{ background: 'white', padding: '10px', borderRadius: '16px', boxShadow: 'var(--shadow-md)', display: 'flex', gap: '8px', marginBottom: '40px', border: '1px solid rgba(0,0,0,0.03)'}}>
+          <div style={{ flex: 2, display: 'flex', alignItems: 'center', background: '#F9FAFB', borderRadius: '10px', padding: '0 15px' }}>
+            <i className="fa-solid fa-magnifying-glass" style={{ color: 'var(--text-light)', opacity: 0.6 }}></i>
             <input 
               type="text" 
               className="form-control" 
-              style={{ paddingLeft: '40px' }} 
+              style={{ border: 'none', background: 'transparent', boxShadow: 'none' }} 
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Enter specialization"
+              placeholder="Specialization..."
             />
           </div>
-          <div style={{ flex: 1, position: 'relative' }}>
-            <i className="fa-solid fa-location-dot" style={{ position: 'absolute', left: '15px', top: '15px', color: 'var(--text-light)' }}></i>
+          <div style={{ flex: 1, display: 'flex', alignItems: 'center', background: '#F9FAFB', borderRadius: '10px', padding: '0 15px' }}>
+            <i className="fa-solid fa-location-dot" style={{ color: 'var(--text-light)', opacity: 0.6 }}></i>
             <input 
               type="text" 
               className="form-control" 
-              style={{ paddingLeft: '40px' }} 
+              style={{ border: 'none', background: 'transparent', boxShadow: 'none' }} 
               value={city}
               onChange={(e) => setCity(e.target.value)}
-              placeholder="Location"
+              placeholder="City"
             />
           </div>
-          <button className="btn btn-primary" onClick={handleSearch} disabled={loading}>
-            {loading ? 'Searching...' : 'Search'}
+          <button className="btn btn-primary" onClick={handleSearch} disabled={loading} style={{ padding: '0 30px', borderRadius: '10px' }}>
+            {loading ? '...' : 'Update'}
           </button>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '280px 1fr', gap: '30px' }} className="responsive-grid-stack">
-          {/* Placeholder Sidebar for Visual Alignment */}
-          <aside style={{ background: 'white', padding: '20px', borderRadius: 'var(--border-radius)', border: '1px solid var(--border-color)', height: 'fit-content' }}>
-            <h3>Filters</h3>
-            <hr style={{ margin: '15px 0', border: 'none', borderTop: '1px solid #eee' }} />
-            <div style={{ marginBottom: '20px' }}>
-              <div style={{ fontWeight: 600, marginBottom: '10px', fontSize: '15px' }}>Consultation</div>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px', fontSize: '14px' }}>
-                <input type="checkbox" defaultChecked /> Online
-              </label>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px' }}>
-                <input type="checkbox" defaultChecked /> In-Clinic
-              </label>
-            </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '280px 1fr', gap: '32px' }} className="responsive-grid-stack">
+          {/* Sidebar Filter Refinement */}
+          <aside>
+             <div className="card" style={{ border: 'none', boxShadow: 'var(--shadow-sm)', position: 'sticky', top: '100px' }}>
+                <h4 style={{ marginBottom: '16px', color: '#111827' }}>Refine Results</h4>
+                <div style={{ marginBottom: '24px' }}>
+                    <div style={{ fontSize: '13px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-light)', marginBottom: '12px' }}>Mode</div>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px', cursor: 'pointer', fontSize: '15px' }}>
+                        <input type="checkbox" defaultChecked style={{ accentColor: 'var(--primary-color)' }} /> 🌐 Tele-Health Online
+                    </label>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', fontSize: '15px' }}>
+                        <input type="checkbox" defaultChecked style={{ accentColor: 'var(--primary-color)' }} /> 🏥 In-Clinic Local
+                    </label>
+                </div>
+                <hr style={{ border: 'none', borderTop: '1px solid #F3F4F6', margin: '20px 0' }} />
+                <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-light)' }}>Status</div>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '10px', fontSize: '15px' }}>
+                    <input type="checkbox" defaultChecked style={{ accentColor: 'var(--primary-color)' }} /> Show Available Only
+                </label>
+             </div>
           </aside>
 
           <main>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
-              <div>
-                <h2 style={{ fontSize: '20px' }}>{doctors.length} Doctors Found</h2>
-                <p style={{ color: 'var(--text-light)', fontSize: '14px' }}>Matching current system data</p>
-              </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '24px' }}>
+              <h3 style={{ fontSize: '22px', fontWeight: 700 }}>{doctors.length} Matches Found</h3>
             </div>
 
             {doctors.length === 0 && !loading && (
-                <div style={{ background: 'white', padding: '40px', textAlign: 'center', borderRadius: '12px' }}>
-                    <p>No database matches found yet. Run the Supabase schema & populate data to see results here!</p>
+                <div style={{ background: 'white', padding: '60px 20px', textAlign: 'center', borderRadius: '16px', boxShadow: 'var(--shadow-sm)' }}>
+                    <div style={{ fontSize: '40px', color: '#E5E7EB', marginBottom: '15px' }}><i className="fa-regular fa-folder-open"></i></div>
+                    <h4 style={{ color: 'var(--text-color)' }}>No Real-Time Data</h4>
+                    <p style={{ color: 'var(--text-light)', fontSize: '14px', maxWidth: '300px', margin: '5px auto 0' }}>Populate your Supabase schema and database records to initialize result streaming.</p>
                 </div>
             )}
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '20px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '24px' }}>
               {doctors.map((doc) => (
-                <div key={doc.id} className="card" style={{ padding: '20px', position: 'relative' }}>
-                   <div style={{ display: 'flex', gap: '15px', marginBottom: '15px' }}>
-                        <div style={{ position: 'relative', width: '60px', height: '60px' }}>
+                <div key={doc.id} className="card" style={{ padding: '24px' }}>
+                   
+                   {/* Online Availability Status Dot */}
+                   <div style={{ position: 'absolute', top: '20px', right: '20px' }}>
+                        {doc.is_available ? (
+                           <span className="badge badge-online"><span className="status-dot online"></span>Online</span>
+                        ) : (
+                           <span className="badge" style={{ background: '#F3F4F6', color: '#6B7280' }}>Offline</span>
+                        )}
+                   </div>
+
+                   <div style={{ display: 'flex', gap: '16px', marginBottom: '20px' }}>
+                        <div style={{ position: 'relative', width: '70px', height: '70px', flexShrink: 0 }}>
                            <Image 
                              src={doc.profile_pic || "/assets/doctor-male.png"} 
-                             alt="Avatar" 
+                             alt="PFP" 
                              fill 
-                             style={{ borderRadius: '10px', objectFit: 'cover' }}
+                             style={{ borderRadius: '12px', objectFit: 'cover', border: '2px solid #F3F4F6' }}
                            />
                         </div>
-                        <div>
-                            <h3 style={{ fontSize: '18px' }}>{doc.name}</h3>
-                            <p style={{ color: 'var(--primary-color)', fontSize: '14px', fontWeight: 500 }}>{doc.specialization}</p>
-                            <p style={{ fontSize: '12px', color: 'var(--text-light)' }}><i className="fa-solid fa-location-dot"></i> {doc.city}</p>
+                        <div style={{ paddingTop: '4px' }}>
+                            <h3 style={{ fontSize: '18px', fontWeight: 700, marginBottom: '2px' }}>{doc.name}</h3>
+                            <span style={{ fontSize: '13px', background: '#F0FDFA', color: '#0F766E', padding: '3px 8px', borderRadius: '6px', fontWeight: 600 }}>{doc.specialization}</span>
+                            
+                            {/* Rating Stars Redesign */}
+                            <div className="rating-stars" style={{ marginTop: '8px' }}>
+                                <i className="fa-solid fa-star"></i>
+                                <i className="fa-solid fa-star"></i>
+                                <i className="fa-solid fa-star"></i>
+                                <i className="fa-solid fa-star"></i>
+                                <i className="fa-solid fa-star-half-stroke"></i>
+                                <span style={{ color: 'var(--text-light)', fontSize: '12px', marginLeft: '4px' }}>({doc.rating || "5.0"})</span>
+                            </div>
                         </div>
                    </div>
-                   <div style={{ display: 'flex', gap: '8px', marginBottom: '15px' }}>
-                      {doc.consultation_type && (
-                         <span className="badge badge-online" style={{ textTransform: 'capitalize' }}>{doc.consultation_type}</span>
-                      )}
-                      {doc.is_available && <span className="badge badge-success">Available</span>}
+
+                   <div style={{ fontSize: '14px', color: 'var(--text-light)', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <i className="fa-solid fa-location-dot" style={{ color: '#9CA3AF' }}></i> {doc.city}, {doc.location || "Main Campus"}
                    </div>
-                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginTop: '15px', borderTop: '1px solid #eee', paddingTop: '15px' }}>
-                        <Link href={`/doctor/${doc.id}`} className="btn btn-outline" style={{ fontSize: '13px' }}>View</Link>
-                        <Link href={`/booking?docId=${doc.id}`} className="btn btn-primary" style={{ fontSize: '13px' }}>Book Now</Link>
+
+                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.5fr', gap: '12px', borderTop: '1px solid #F3F4F6', paddingTop: '20px' }}>
+                        <Link href={`/doctor/${doc.id}`} className="btn btn-outline" style={{ padding: '10px' }}>Profile</Link>
+                        <Link href={`/booking?docId=${doc.id}`} className="btn btn-primary" style={{ padding: '10px', fontWeight: 700 }}>Book Now</Link>
                    </div>
                 </div>
               ))}
@@ -126,9 +149,7 @@ export default function SearchPage() {
       </div>
       <style jsx>{`
         @media (max-width: 768px) {
-          .responsive-grid-stack {
-             grid-template-columns: 1fr !important;
-          }
+          .responsive-grid-stack { grid-template-columns: 1fr !important; }
           aside { display: none; }
         }
       `}</style>
