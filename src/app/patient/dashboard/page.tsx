@@ -63,7 +63,14 @@ export default function PatientDashboard() {
     </div>
   );
 
-  return (
+    const handleCancel = async (id: string) => {
+       if (!confirm("Are you certain you wish to terminate this reservation?")) return;
+       const supabase = createClientBrowser();
+       const { error } = await supabase.from('appointments').update({ status: 'cancelled' }).eq('id', id);
+       if (!error) setAppointments(prev => prev.map(a => a.id === id ? {...a, status: 'cancelled'} : a));
+    };
+
+    return (
     <div className="dashboard-layout fade-in" style={{ background: '#F9FAFB' }}>
       <aside className="dash-sidebar" style={{ background: 'white', borderRight: '1px solid #F3F4F6', padding: '30px 20px' }}>
          <div style={{ marginBottom: '35px', textAlign: 'center' }}>
@@ -94,7 +101,7 @@ export default function PatientDashboard() {
       </aside>
 
       <main className="dash-content" style={{ padding: '40px' }}>
-          <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '35px' }}>
+          <header className="dash-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '35px' }}>
               <div>
                   <h1 style={{ fontSize: '30px', fontWeight: 900, letterSpacing: '-0.5px', color: '#111827' }}>Quantum Health Core</h1>
                   <p style={{ color: '#6B7280', fontSize: '15px', marginTop: '5px' }}>Synthesized updates for your medical timeline.</p>
@@ -133,8 +140,8 @@ export default function PatientDashboard() {
                       </div>
                   ) : (
                       appointments.map(a => (
-                        <div key={a.id} style={{ padding: '20px', background: 'white', border: '1.5px solid #F3F4F6', borderRadius: '20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', transition: 'all 0.2s ease', cursor: 'default' }} onMouseEnter={(e) => e.currentTarget.style.borderColor = 'var(--primary-color)'} onMouseLeave={(e) => e.currentTarget.style.borderColor = '#F3F4F6'}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+                        <div key={a.id} className="appt-row" style={{ padding: '20px', background: 'white', border: '1.5px solid #F3F4F6', borderRadius: '20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', transition: 'all 0.2s ease', cursor: 'default' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }} className="appt-meta">
                                 <div style={{ padding: '15px', background: '#F0FDFA', borderRadius: '16px', textAlign: 'center', minWidth: '75px', border: '1px solid #CCFBF1' }}>
                                     <div style={{ fontWeight: 900, fontSize: '22px', color: 'var(--primary-color)', lineHeight: 1 }}>{new Date(a.appointment_date).getDate()}</div>
                                     <div style={{ fontSize: '12px', fontWeight: 800, marginTop: '4px', color: '#0F766E', textTransform: 'uppercase' }}>{new Date(a.appointment_date).toLocaleString('en-US', { month: 'short' })}</div>
@@ -146,11 +153,14 @@ export default function PatientDashboard() {
                                     </p>
                                 </div>
                             </div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-                                <span style={{ textTransform: 'uppercase', fontSize: '11px', letterSpacing: '0.05em', fontWeight: 800, background: a.status === 'scheduled' ? '#DBEAFE' : '#FEF3C7', color: a.status === 'scheduled' ? '#1E40AF' : '#92400E', padding: '6px 12px', borderRadius: '8px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }} className="appt-actions">
+                                <span style={{ textTransform: 'uppercase', fontSize: '11px', letterSpacing: '0.05em', fontWeight: 800, background: a.status === 'scheduled' ? '#DBEAFE' : a.status === 'cancelled' ? '#FEE2E2' : '#FEF3C7', color: a.status === 'scheduled' ? '#1E40AF' : a.status === 'cancelled' ? '#DC2626' : '#92400E', padding: '6px 12px', borderRadius: '8px' }}>
                                     {a.status}
                                 </span>
-                                {a.type === 'online' && (
+                                {a.status === 'scheduled' && (
+                                   <button onClick={() => handleCancel(a.id)} className="btn" style={{ background: '#FFF1F2', color: '#E11D48', border: '1px solid #FECDD3', borderRadius: '10px', padding: '8px 15px', fontSize: '13px', fontWeight: 600 }}>Cancel</button>
+                                )}
+                                {a.type === 'online' && a.status === 'scheduled' && (
                                     <button className="btn" style={{ background: 'var(--primary-color)', color: 'white', padding: '8px 16px', fontSize: '13px', borderRadius: '10px', fontWeight: 700 }}>Join Call</button>
                                 )}
                             </div>
@@ -160,6 +170,23 @@ export default function PatientDashboard() {
               </div>
           </div>
       </main>
+
+      <style jsx>{`
+         .dashboard-layout { display: flex; min-height: 100vh; }
+         .dash-sidebar { width: 280px; flex-shrink: 0; display: flex; flex-direction: column; }
+         .dash-content { flex: 1; }
+         @media (max-width: 992px) {
+             .dashboard-layout { flex-direction: column; }
+             .dash-sidebar { width: 100%; border-right: none; border-bottom: 1px solid #F3F4F6; }
+             .dash-content { padding: 20px !important; }
+         }
+         @media (max-width: 640px) {
+             .dash-header { flex-direction: column; gap: 20px; align-items: flex-start !important; }
+             .appt-row { flex-direction: column; align-items: flex-start !important; gap: 15px; }
+             .appt-actions { width: 100%; justify-content: flex-start; }
+             .appt-meta { width: 100%; }
+         }
+      `}</style>
     </div>
   );
 }

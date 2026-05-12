@@ -119,7 +119,7 @@ export default function DoctorDashboard() {
       </aside>
 
       <main className="dash-content" style={{ padding: '40px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px' }}>
+          <div className="dash-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px' }}>
               <div>
                   <h1 style={{ fontSize: '32px', fontWeight: 900, letterSpacing: '-0.5px', color: '#0F172A' }}>Operation Command</h1>
                   <p style={{ color: '#64748B', fontSize: '15px', marginTop: '5px' }}>Review and control real-time practitioner streams.</p>
@@ -165,7 +165,7 @@ export default function DoctorDashboard() {
           <div style={{ padding: '35px', borderRadius: '28px', background: 'white', border: '1px solid #F1F5F9', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.02)' }}>
              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
                 <h3 style={{ fontSize: '22px', fontWeight: 900, color: '#0F172A', letterSpacing: '-0.3px' }}>Assigned Grid Load</h3>
-                <button className="btn" style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', padding: '8px 16px', fontSize: '13px', color: '#475569', fontWeight: 700, borderRadius: '10px' }}>Force Refresh</button>
+                <button onClick={fetchData} className="btn" style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', padding: '8px 16px', fontSize: '13px', color: '#475569', fontWeight: 700, borderRadius: '10px' }}>Force Refresh</button>
              </div>
 
              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -175,8 +175,8 @@ export default function DoctorDashboard() {
                     </div>
                 ) : (
                     appointments.map((apt) => (
-                        <div key={apt.id} style={{ border: '1px solid #F1F5F9', background: '#FFFFFF', padding: '22px', borderRadius: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 2px 4px rgba(0,0,0,0.01)' }}>
-                            <div style={{ display: 'flex', gap: '18px', alignItems: 'center' }}>
+                        <div key={apt.id} className="appt-row" style={{ border: '1px solid #F1F5F9', background: '#FFFFFF', padding: '22px', borderRadius: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 2px 4px rgba(0,0,0,0.01)' }}>
+                            <div style={{ display: 'flex', gap: '18px', alignItems: 'center' }} className="appt-meta">
                                 <div style={{ width: '50px', height: '50px', background: '#F1F5F9', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#64748B', fontSize: '20px' }}>
                                     <i className="fa-solid fa-user"></i>
                                 </div>
@@ -187,9 +187,9 @@ export default function DoctorDashboard() {
                                     </div>
                                 </div>
                             </div>
-                            <div style={{ display: 'flex', gap: '12px' }}>
+                            <div style={{ display: 'flex', gap: '12px' }} className="appt-actions">
                                 <span style={{ padding: '6px 12px', fontSize: '11px', fontWeight: 800, borderRadius: '8px', background: apt.type === 'online' ? '#F0FDFA' : '#FFF7ED', color: apt.type === 'online' ? '#0D9488' : '#EA580C', textTransform: 'uppercase' }}>{apt.type}</span>
-                                <button className="btn btn-primary" style={{ padding: '10px 24px', fontSize: '13px', borderRadius: '12px', fontWeight: 700, boxShadow: '0 4px 10px rgba(13, 148, 136, 0.2)' }}>Engage</button>
+                                <Link href={`/chat?patientId=${apt.patient_id}`} className="btn btn-primary" style={{ padding: '10px 24px', fontSize: '13px', borderRadius: '12px', fontWeight: 700, boxShadow: '0 4px 10px rgba(13, 148, 136, 0.2)' }}>Message</Link>
                             </div>
                         </div>
                     ))
@@ -197,6 +197,23 @@ export default function DoctorDashboard() {
              </div>
           </div>
       </main>
+
+      <style jsx>{`
+         .dashboard-layout { display: flex; min-height: 100vh; }
+         .dash-sidebar { width: 280px; flex-shrink: 0; display: flex; flex-direction: column; }
+         .dash-content { flex: 1; }
+         @media (max-width: 992px) {
+             .dashboard-layout { flex-direction: column; }
+             .dash-sidebar { width: 100%; border-right: none; padding: 20px !important; }
+             .dash-content { padding: 20px !important; }
+         }
+         @media (max-width: 640px) {
+             .dash-header { flex-direction: column; gap: 20px; align-items: flex-start !important; }
+             .appt-row { flex-direction: column; align-items: flex-start !important; gap: 15px; }
+             .appt-actions { width: 100%; justify-content: flex-start; }
+             .appt-meta { width: 100%; }
+         }
+      `}</style>
     </div>
   );
 }
