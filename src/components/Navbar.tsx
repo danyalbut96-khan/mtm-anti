@@ -89,10 +89,10 @@ export default function Navbar() {
                    </button>
                 </div>
             ) : (
-                <>
-                  <Link href="/auth/login" className="btn btn-outline desktop-only">Sign In</Link>
-                  <Link href="/auth/signup" className="btn btn-primary desktop-only">Get Started</Link>
-                </>
+                <div className="desktop-only" style={{ display: 'flex', gap: '10px' }}>
+                  <Link href="/auth/login" className="btn btn-outline">Sign In</Link>
+                  <Link href="/auth/signup" className="btn btn-primary">Get Started</Link>
+                </div>
             )}
             
             <button 

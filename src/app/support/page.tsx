@@ -59,8 +59,8 @@ export default function SupportPage() {
   };
 
   return (
-    <div className="section-bg" style={{ minHeight: 'calc(100vh - 80px)', display: 'flex', justifyContent: 'center', padding: '30px' }}>
-      <div className="card fade-in" style={{ width: '100%', maxWidth: '950px', display: 'flex', flexDirection: 'column', height: '82vh', padding: 0, overflow: 'hidden', border: 'none', boxShadow: 'var(--shadow-xl)' }}>
+    <div className="chat-page-wrapper section-bg" style={{ minHeight: 'calc(100vh - 80px)', display: 'flex', justifyContent: 'center', padding: '30px' }}>
+      <div className="card fade-in chat-chatbox" style={{ width: '100%', maxWidth: '950px', display: 'flex', flexDirection: 'column', height: '82vh', padding: 0, overflow: 'hidden', border: 'none', boxShadow: 'var(--shadow-xl)' }}>
         
         <div style={{ background: 'var(--primary-color)', color: 'white', padding: '20px 30px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
            <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
@@ -136,24 +136,43 @@ export default function SupportPage() {
            )}
         </div>
 
-        <div style={{ padding: '25px 30px', background: 'white', borderTop: '1px solid #E5E7EB', display: 'flex', gap: '12px', alignItems: 'center' }}>
+        <div className="chat-input-container" style={{ padding: '25px 30px', background: 'white', borderTop: '1px solid #E5E7EB', display: 'flex', gap: '12px', alignItems: 'center' }}>
           <div style={{ flex: 1, position: 'relative' }}>
               <input 
                 type="text" 
                 className="form-control" 
                 style={{ paddingRight: '50px', height: '52px', borderRadius: '14px', background: '#F9FAFB', border: '1.5px solid #F3F4F6', fontSize: '15px' }}
-                placeholder="Detail physical triggers or specify target jurisdiction..."
+                placeholder="Describe health situation..."
                 value={input}
                 onChange={e => setInput(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && handleSend()}
               />
               <i className="fa-solid fa-magnifying-glass" style={{ position: 'absolute', right: '20px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-light)', opacity: 0.5 }}></i>
           </div>
-          <button className="btn btn-primary" onClick={handleSend} disabled={!input.trim()} style={{ height: '52px', borderRadius: '14px', padding: '0 25px', fontWeight: 700, boxShadow: 'var(--shadow-md)', opacity: !input.trim() ? 0.6 : 1 }}>
-            Push Prompt
+          <button className="btn btn-primary chat-submit-btn" onClick={handleSend} disabled={!input.trim()} style={{ height: '52px', borderRadius: '14px', padding: '0 25px', fontWeight: 700, boxShadow: 'var(--shadow-md)', opacity: !input.trim() ? 0.6 : 1 }}>
+            Push
           </button>
         </div>
       </div>
+      
+      <style jsx>{`
+         @media (max-width: 768px) {
+             div[style*="padding: '30px'"] {
+                 padding: 10px !important;
+             }
+             .card {
+                 height: calc(100vh - 120px) !important;
+                 max-width: 100% !important;
+             }
+             .chat-input-container {
+                 padding: 15px 15px !important;
+             }
+             .chat-submit-btn {
+                 padding: 0 15px !important;
+                 font-size: 13px !important;
+             }
+         }
+      `}</style>
     </div>
   );
 }
