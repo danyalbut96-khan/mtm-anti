@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Patient Dashboard - SmartDoc AI</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .dashboard-layout {
+            display: grid;
+            grid-template-columns: 260px 1fr;
+            min-height: calc(100vh - 70px);
+        }
+        .dash-sidebar {
+            background: white;
+            border-right: 1px solid var(--border-color);
+            padding: 30px 20px;
+        }
+        .side-menu-link {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 15px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            color: var(--text-light);
+            font-weight: 500;
+            transition: var(--transition);
+        }
+        .side-menu-link i { width: 20px; }
+        .side-menu-link:hover, .side-menu-link.active {
+            background: #e8f0fe;
+            color: var(--primary-color);
+        }
+
+        .dash-content {
+            background: var(--bg-light);
+            padding: 30px 40px;
+        }
+        .dash-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+        
+        .apt-card {
+            background: white;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            transition: var(--transition);
+        }
+        .apt-card:hover {
+            box-shadow: var(--shadow-sm);
+        }
+        .apt-time {
+            text-align: center;
+            min-width: 70px;
+            border-right: 1px solid #eee;
+            margin-right: 20px;
+            padding-right: 20px;
+        }
+
+        .ai-rec-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .rec-card {
+            background: linear-gradient(135deg, #ffffff 0%, #f8faff 100%);
+            border: 1px solid #d2e3fc;
+            border-radius: 12px;
+            padding: 20px;
+            position: relative;
+        }
+        .ai-badge {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: #e8f0fe;
+            color: var(--primary-color);
+            font-size: 10px;
+            font-weight: 700;
+            padding: 3px 8px;
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        @media (max-width: 768px) {
+            .dashboard-layout { grid-template-columns: 1fr; }
+            .dash-sidebar { display: none; }
+            .dash-content { padding: 20px; }
+            .apt-card { flex-direction: column; gap: 15px; text-align: center; }
+            .apt-time { border-right: none; padding-right: 0; margin-right: 0; border-bottom: 1px solid #eee; padding-bottom: 10px; width:100%;}
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container nav-container">
+            <a href="index.html" class="logo"><i class="fa-solid fa-user-doctor"></i> SmartDoc <span>AI</span></a>
+            <div style="display:flex; align-items:center; gap:15px;">
+                <i class="fa-regular fa-bell" style="font-size:20px; color:var(--text-light); cursor:pointer;"></i>
+                <div style="display:flex; align-items:center; gap:10px; cursor:pointer;">
+                    <span style="font-weight:600;">John Doe</span>
+                    <div style="width:35px; height:35px; border-radius:50%; background:#ccc; display:flex; justify-content:center; align-items:center; color:white; font-weight:bold;">JD</div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="dashboard-layout">
+        <aside class="dash-sidebar">
+            <a href="#" class="side-menu-link active"><i class="fa-solid fa-chart-pie"></i> Overview</a>
+            <a href="#" class="side-menu-link"><i class="fa-solid fa-calendar-check"></i> My Appointments</a>
+            <a href="chat.html" class="side-menu-link"><i class="fa-solid fa-message"></i> Messages</a>
+            <a href="#" class="side-menu-link"><i class="fa-solid fa-file-medical"></i> Lab Reports</a>
+            <hr style="border:none; border-top:1px solid #eee; margin:20px 0;">
+            <a href="#" class="side-menu-link"><i class="fa-solid fa-gear"></i> Settings</a>
+            <a href="index.html" class="side-menu-link" style="color:var(--danger-color);"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
+        </aside>
+
+        <main class="dash-content">
+            <div class="dash-header">
+                <div>
+                    <h1>Hello, John!</h1>
+                    <p style="color:var(--text-light);">Welcome back to your health dashboard.</p>
+                </div>
+                <a href="search.html" class="btn btn-primary"><i class="fa-solid fa-plus"></i> New Booking</a>
+            </div>
+
+            <section style="margin-bottom: 40px;">
+                <h3 style="margin-bottom: 15px;">Upcoming Appointments</h3>
+                
+                <!-- Appt Card -->
+                <div class="apt-card">
+                    <div style="display:flex; align-items:center;">
+                        <div class="apt-time">
+                            <span style="font-weight:bold; font-size:18px;">12</span><br>
+                            <span style="color:var(--text-light); font-size:12px;">MAY, WED</span>
+                        </div>
+                        <div style="display:flex; gap:15px; align-items:center;">
+                            <img src="assets/doctor-male.png" alt="Doc" style="width:50px; height:50px; border-radius:50%; object-fit:cover;">
+                            <div>
+                                <h4 style="margin-bottom:2px;">Dr. James Smith</h4>
+                                <small style="color:var(--primary-color); font-weight:600;">10:00 AM • Online Call</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div style="display:flex; gap:10px;">
+                        <button class="btn btn-outline" style="padding:8px 15px; font-size:13px;">Reschedule</button>
+                        <button class="btn btn-primary" style="padding:8px 15px; font-size:13px;"><i class="fa-solid fa-video"></i> Join Call</button>
+                    </div>
+                </div>
+            </section>
+
+            <section>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                    <h3>AI Recommended Specialists</h3>
+                    <a href="#" style="font-size:14px; color:var(--primary-color); font-weight:500;">View all</a>
+                </div>
+                
+                <div class="ai-rec-grid">
+                    <!-- Rec Card 1 -->
+                    <div class="rec-card">
+                        <div class="ai-badge"><i class="fa-solid fa-wand-magic-sparkles"></i> 98% Match</div>
+                        <div style="display:flex; gap:12px; align-items:center; margin-bottom:15px;">
+                            <img src="assets/doctor-female.png" style="width:45px; height:45px; border-radius:10px; object-fit:cover;">
+                            <div>
+                                <h5 style="font-size:15px;">Dr. Sarah Miller</h5>
+                                <small style="color:var(--text-light);">Cardiologist</small>
+                            </div>
+                        </div>
+                        <p style="font-size:12px; color:var(--text-light); margin-bottom:15px;">Highly recommended based on your recent checkup history.</p>
+                        <a href="doctor-profile.html" class="btn btn-secondary" style="width:100%; font-size:13px; padding:8px;">Book Now</a>
+                    </div>
+                    
+                    <!-- Rec Card 2 -->
+                    <div class="rec-card">
+                         <div class="ai-badge"><i class="fa-solid fa-wand-magic-sparkles"></i> 92% Match</div>
+                        <div style="display:flex; gap:12px; align-items:center; margin-bottom:15px;">
+                            <div style="width:45px; height:45px; border-radius:10px; background:#ddd; display:flex; align-items:center; justify-content:center;"><i class="fa-solid fa-user-md"></i></div>
+                            <div>
+                                <h5 style="font-size:15px;">Dr. Robert Wilson</h5>
+                                <small style="color:var(--text-light);">Nutritionist</small>
+                            </div>
+                        </div>
+                         <p style="font-size:12px; color:var(--text-light); margin-bottom:15px;">Matches your search for cardiovascular health diets.</p>
+                        <a href="#" class="btn btn-secondary" style="width:100%; font-size:13px; padding:8px;">Book Now</a>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+</body>
+</html>
