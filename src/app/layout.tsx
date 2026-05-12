@@ -61,14 +61,14 @@ export default function RootLayout({
                 <ul>
                   <li><Link href="/patient/dashboard">Patient Dashboard</Link></li>
                   <li><Link href="/doctor/dashboard">Clinician Portal</Link></li>
-                  <li><a href="#">Terms of Use</a></li>
+                  <li><Link href="/terms">Terms of Use</Link></li>
                 </ul>
               </div>
               <div className="footer-col">
                 <h4>Compliance</h4>
                 <ul>
-                  <li><a href="#">Data Privacy</a></li>
-                  <li><a href="#">Transparency</a></li>
+                  <li><Link href="/privacy">Data Privacy</Link></li>
+                  <li><Link href="/transparency">Transparency</Link></li>
                   <li><a href="#">Contact Center</a></li>
                 </ul>
               </div>

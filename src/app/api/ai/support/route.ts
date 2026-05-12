@@ -65,7 +65,7 @@ export async function POST(request: Request) {
       // Real-time Supabase Access Requirement 
       let { data: doctors } = await supabase
         .from('doctors')
-        .select('name, specialization, city, is_available, consultation_type')
+        .select('id, name, specialization, city, is_available, consultation_type, profile_pic, rating')
         .ilike('city', `%${analysis.city}%`)
         .ilike('specialization', `%${analysis.specialization}%`)
         .order('rating', { ascending: false })
@@ -82,7 +82,7 @@ export async function POST(request: Request) {
          if (cluster) {
             const { data: fallback } = await supabase
               .from('doctors')
-              .select('name, specialization, city, is_available, consultation_type')
+              .select('id, name, specialization, city, is_available, consultation_type, profile_pic, rating')
               .ilike('specialization', `%${analysis.specialization}%`)
               .in('city', cluster)
               .limit(3);
@@ -103,6 +103,7 @@ export async function POST(request: Request) {
 
       return NextResponse.json({ 
         response: finalResponse.choices[0]?.message?.content || "Refined matches synthesized.",
+        injectedDoctors: doctors || [], // Requirement: Structured payload injection
         detected: { city: analysis.city, spec: analysis.specialization } 
       });
     }
