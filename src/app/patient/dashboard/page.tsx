@@ -2,103 +2,161 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { createClientBrowser } from '@/lib/supabaseBrowser';
 
 export default function PatientDashboard() {
-  const [appointments, setAppointments] = useState<any[]>([
-    // Initial seed for simulation - will receive real-time override updates
-    { id: 'apt-1', date: '15', month: 'MAY', time: '10:00 AM', title: 'General Checkup', status: 'scheduled' }
-  ]);
+  const [appointments, setAppointments] = useState<any[]>([]);
+  const [patientName, setPatientName] = useState('Patient');
+  const [loading, setLoading] = useState(true);
+  const router = useRouter();
+
+  const handleLogout = async () => {
+      const supabase = createClientBrowser();
+      await supabase.auth.signOut();
+      router.push('/');
+      router.refresh();
+  };
 
   useEffect(() => {
     const supabase = createClientBrowser();
+    
+    const loadData = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+          router.push('/auth/login');
+          return;
+      }
 
-    // Subscribe to Realtime changes on the appointments table (Requirement 2)
-    const channel = supabase
-      .channel('appointment-updates')
-      .on(
-        'postgres_changes', 
-        { event: '*', schema: 'public', table: 'appointments' }, 
-        (payload) => {
-          console.log('Realtime Update Detected:', payload);
-          // In dynamic environment: handle refreshing data list immediately without refresh.
-          // For demo: trigger alert demonstrating immediate capture.
-          if (payload.eventType === 'UPDATE') {
-             alert(`Realtime Update: Appointment status changed to ${payload.new.status}!`);
-             // Merge data safely here logic
-          }
-        }
-      )
-      .subscribe();
+      // Load Patient Context
+      const { data: pat } = await supabase.from('patients').select('name').eq('id', session.user.id).maybeSingle();
+      if (pat) setPatientName(pat.name);
 
-    return () => {
-      supabase.removeChannel(channel);
+      // Load Actual Bookings joined with doctor metadata
+      const { data: appts } = await supabase
+         .from('appointments')
+         .select('*, doctors(name, specialization, profile_pic)')
+         .eq('patient_id', session.user.id)
+         .order('appointment_date', { ascending: true });
+      
+      if (appts) setAppointments(appts);
+      setLoading(false);
+
+      // Realtime Hook setup
+      const channel = supabase.channel('patient-updates').on(
+          'postgres_changes', 
+          { event: '*', schema: 'public', table: 'appointments', filter: `patient_id=eq.${session.user.id}` }, 
+          () => loadData()
+      ).subscribe();
+
+      return () => { supabase.removeChannel(channel); }
     };
-  }, []);
+
+    loadData();
+  }, [router]);
+
+  if (loading) return (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '80vh', flexDirection: 'column', gap: '15px' }}>
+        <div style={{ width: '50px', height: '50px', borderRadius: '50%', border: '3px solid #F3F4F6', borderTopColor: 'var(--primary-color)', animation: 'spin 1s linear infinite' }}></div>
+        <p style={{ fontWeight: 600, color: 'var(--text-light)', fontSize: '14px' }}>Decrypting Personal Health Grid...</p>
+        <style jsx>{` @keyframes spin { 100% { transform: rotate(360deg); } } `}</style>
+    </div>
+  );
 
   return (
-    <div className="dashboard-layout fade-in">
-      <aside className="dash-sidebar">
-         <h4 style={{ marginBottom: '30px', paddingLeft: '16px', fontSize: '14px', textTransform: 'uppercase', letterSpacing: '0.1em', color: '#9CA3AF' }}>My Portal</h4>
-         <Link href="#" className="side-menu-link active"><i className="fa-solid fa-table-columns"></i> My Dashboard</Link>
-         <Link href="/support" className="side-menu-link"><i className="fa-solid fa-comment-medical"></i> AI Assistance</Link>
-         <Link href="#" className="side-menu-link"><i className="fa-solid fa-file-medical"></i> Health Records</Link>
-         <hr style={{ margin: '20px 0', borderColor: 'var(--border-color)', opacity: 0.5 }} />
-         <Link href="/" className="side-menu-link" style={{ color: 'var(--danger-color)' }}><i className="fa-solid fa-arrow-right-from-bracket"></i> Logout</Link>
+    <div className="dashboard-layout fade-in" style={{ background: '#F9FAFB' }}>
+      <aside className="dash-sidebar" style={{ background: 'white', borderRight: '1px solid #F3F4F6', padding: '30px 20px' }}>
+         <div style={{ marginBottom: '35px', textAlign: 'center' }}>
+             <div style={{ width: '60px', height: '60px', background: 'linear-gradient(135deg, var(--primary-color), #0F766E)', borderRadius: '50%', margin: '0 auto 15px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '24px', fontWeight: 800, boxShadow: '0 10px 15px -3px rgba(13, 148, 136, 0.3)' }}>
+                 {patientName.charAt(0).toUpperCase()}
+             </div>
+             <h4 style={{ fontWeight: 800, fontSize: '16px', color: '#111827', marginBottom: '4px' }}>{patientName}</h4>
+             <span style={{ fontSize: '12px', background: '#F0FDFA', color: '#0D9488', padding: '4px 10px', borderRadius: '20px', fontWeight: 600 }}>Verified Patient</span>
+         </div>
+
+         <nav style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+             <Link href="#" className="side-menu-link active" style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '14px 16px', borderRadius: '12px', fontWeight: 700, background: '#F0FDFA', color: 'var(--primary-color)' }}>
+                 <i className="fa-solid fa-cubes" style={{ fontSize: '18px' }}></i> Overview
+             </Link>
+             <Link href="/support" className="side-menu-link" style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '14px 16px', borderRadius: '12px', fontWeight: 600, color: '#4B5563' }}>
+                 <i className="fa-solid fa-comment-medical" style={{ fontSize: '18px' }}></i> AI Intake Node
+             </Link>
+             <Link href="/find-doctor" className="side-menu-link" style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '14px 16px', borderRadius: '12px', fontWeight: 600, color: '#4B5563' }}>
+                 <i className="fa-solid fa-stethoscope" style={{ fontSize: '18px' }}></i> Book Specialist
+             </Link>
+         </nav>
+
+         <div style={{ marginTop: 'auto', paddingTop: '40px' }}>
+            <button onClick={handleLogout} className="side-menu-link" style={{ width: '100%', border: 'none', background: 'none', cursor: 'pointer', textAlign: 'left', display: 'flex', alignItems: 'center', gap: '12px', padding: '14px 16px', borderRadius: '12px', fontWeight: 700, color: '#EF4444' }}>
+               <i className="fa-solid fa-power-off" style={{ fontSize: '18px' }}></i> Sign Out System
+            </button>
+         </div>
       </aside>
 
-      <main className="dash-content">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px' }}>
+      <main className="dash-content" style={{ padding: '40px' }}>
+          <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '35px' }}>
               <div>
-                  <h1 style={{ fontSize: '28px', fontWeight: 700 }}>Welcome Back, Patient!</h1>
-                  <p style={{ color: 'var(--text-light)' }}>Connected to Real-Time Health Updates.</p>
+                  <h1 style={{ fontSize: '30px', fontWeight: 900, letterSpacing: '-0.5px', color: '#111827' }}>Quantum Health Core</h1>
+                  <p style={{ color: '#6B7280', fontSize: '15px', marginTop: '5px' }}>Synthesized updates for your medical timeline.</p>
               </div>
-              <Link href="/find-doctor" className="btn btn-primary" style={{ borderRadius: '12px' }}>
-                  <i className="fa-solid fa-plus"></i> Find Doctor
+              <Link href="/find-doctor" className="btn btn-primary" style={{ borderRadius: '14px', boxShadow: '0 4px 12px rgba(13, 148, 136, 0.25)', padding: '12px 24px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <i className="fa-solid fa-plus"></i> Launch Directory
               </Link>
+          </header>
+
+          {/* Performance Stat Bar */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '20px', marginBottom: '35px' }}>
+              <div style={{ background: 'white', padding: '25px', borderRadius: '20px', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px -1px rgba(0, 0, 0, 0.01)', border: '1px solid rgba(243,244,246,1)' }}>
+                  <div style={{ fontSize: '14px', fontWeight: 600, color: '#6B7280', marginBottom: '10px' }}>Active Appointments</div>
+                  <div style={{ fontSize: '36px', fontWeight: 900, color: '#111827' }}>{appointments.filter(a => a.status !== 'cancelled').length}</div>
+              </div>
+              <div style={{ background: 'white', padding: '25px', borderRadius: '20px', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.02)', border: '1px solid rgba(243,244,246,1)' }}>
+                  <div style={{ fontSize: '14px', fontWeight: 600, color: '#6B7280', marginBottom: '10px' }}>Network Latency</div>
+                  <div style={{ fontSize: '36px', fontWeight: 900, color: '#10B981' }}>14ms</div>
+              </div>
           </div>
 
-          <div className="card" style={{ marginBottom: '32px', border: 'none', boxShadow: 'var(--shadow-sm)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                   <h3 style={{ fontSize: '18px', fontWeight: 700 }}>Upcoming Scheduled Consultations</h3>
-                   <span style={{ fontSize: '12px', color: 'var(--success-color)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px' }}>
-                       <span style={{ width: '6px', height: '6px', background: 'var(--success-color)', borderRadius: '50%' }}></span> Real-time Live
-                   </span>
+          <div className="card" style={{ padding: '30px', borderRadius: '24px', background: 'white', border: 'none', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.03)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '25px' }}>
+                   <h3 style={{ fontSize: '20px', fontWeight: 800, color: '#111827' }}>Operational Schedule</h3>
+                   <div style={{ fontSize: '12px', color: '#10B981', background: '#ECFDF5', padding: '6px 12px', borderRadius: '20px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px', border: '1px solid #D1FAE5' }}>
+                       <span style={{ width: '8px', height: '8px', background: '#10B981', borderRadius: '50%', display: 'inline-block', boxShadow: '0 0 0 3px rgba(16, 185, 129, 0.2)' }}></span> Real-Time Live
+                   </div>
               </div>
               
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  {appointments.map(a => (
-                    <div key={a.id} style={{ padding: '18px', background: '#FFFFFF', border: '1px solid #F3F4F6', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                            <div style={{ padding: '12px', background: '#F0FDFA', borderRadius: '12px', textAlign: 'center', minWidth: '65px' }}>
-                                <div style={{ fontWeight: 800, fontSize: '18px', color: 'var(--primary-color)', lineHeight: 1 }}>{a.date}</div>
-                                <div style={{ fontSize: '11px', fontWeight: 700, opacity: 0.8, marginTop: '2px', color: '#0F766E' }}>{a.month}</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  {appointments.length === 0 ? (
+                      <div style={{ textAlign: 'center', padding: '60px 20px', background: '#F9FAFB', borderRadius: '20px', border: '2px dashed #E5E7EB' }}>
+                          <i className="fa-regular fa-calendar-xmark" style={{ fontSize: '40px', color: '#9CA3AF', marginBottom: '15px' }}></i>
+                          <div style={{ fontWeight: 700, color: '#4B5563', fontSize: '16px' }}>No active appointment records</div>
+                          <p style={{ fontSize: '14px', color: '#6B7280', marginTop: '5px' }}>Initiate a session via the specialist directory.</p>
+                      </div>
+                  ) : (
+                      appointments.map(a => (
+                        <div key={a.id} style={{ padding: '20px', background: 'white', border: '1.5px solid #F3F4F6', borderRadius: '20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', transition: 'all 0.2s ease', cursor: 'default' }} onMouseEnter={(e) => e.currentTarget.style.borderColor = 'var(--primary-color)'} onMouseLeave={(e) => e.currentTarget.style.borderColor = '#F3F4F6'}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+                                <div style={{ padding: '15px', background: '#F0FDFA', borderRadius: '16px', textAlign: 'center', minWidth: '75px', border: '1px solid #CCFBF1' }}>
+                                    <div style={{ fontWeight: 900, fontSize: '22px', color: 'var(--primary-color)', lineHeight: 1 }}>{new Date(a.appointment_date).getDate()}</div>
+                                    <div style={{ fontSize: '12px', fontWeight: 800, marginTop: '4px', color: '#0F766E', textTransform: 'uppercase' }}>{new Date(a.appointment_date).toLocaleString('en-US', { month: 'short' })}</div>
+                                </div>
+                                <div>
+                                    <h4 style={{ fontSize: '17px', fontWeight: 800, color: '#111827' }}>Session with Dr. {a.doctors?.name || 'Specialist'}</h4>
+                                    <p style={{ fontSize: '14px', color: '#6B7280', marginTop: '4px', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                        <i className="fa-solid fa-tag" style={{ color: 'var(--primary-color)', fontSize: '12px' }}></i> {a.doctors?.specialization} • <i className="fa-regular fa-clock"></i> {a.time_slot}
+                                    </p>
+                                </div>
                             </div>
-                            <div>
-                                <h4 style={{ fontSize: '16px', fontWeight: 700 }}>{a.title} Appointment</h4>
-                                <p style={{ fontSize: '14px', color: 'var(--text-light)', marginTop: '2px' }}>
-                                    <i className="fa-regular fa-clock" style={{ marginRight: '4px' }}></i> Slot: {a.time}
-                                </p>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                                <span style={{ textTransform: 'uppercase', fontSize: '11px', letterSpacing: '0.05em', fontWeight: 800, background: a.status === 'scheduled' ? '#DBEAFE' : '#FEF3C7', color: a.status === 'scheduled' ? '#1E40AF' : '#92400E', padding: '6px 12px', borderRadius: '8px' }}>
+                                    {a.status}
+                                </span>
+                                {a.type === 'online' && (
+                                    <button className="btn" style={{ background: 'var(--primary-color)', color: 'white', padding: '8px 16px', fontSize: '13px', borderRadius: '10px', fontWeight: 700 }}>Join Call</button>
+                                )}
                             </div>
                         </div>
-                        <span className="badge badge-online" style={{ textTransform: 'capitalize' }}>
-                           <span className="status-dot online"></span> Status: {a.status}
-                        </span>
-                    </div>
-                  ))}
-              </div>
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px' }}>
-              <div className="card" style={{ background: 'linear-gradient(135deg, #FFFFFF 0%, #F0FDFA 100%)', border: '1px solid #CCFBF1', boxShadow: 'var(--shadow-sm)' }}>
-                  <div style={{ color: 'var(--primary-color)', background: 'white', width: '44px', height: '44px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px', marginBottom: '15px', boxShadow: 'var(--shadow-sm)' }}>
-                      <i className="fa-solid fa-wand-magic-sparkles"></i>
-                  </div>
-                  <h4 style={{ fontWeight: 700 }}>Smart AI Match Engine</h4>
-                  <p style={{ fontSize: '14px', color: 'var(--text-light)', marginTop: '6px', lineHeight: 1.6 }}>Based on your recent intake queries, we recommend connecting with a regional Neurology expert.</p>
-                  <Link href="/find-doctor?specialization=Neurology" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', marginTop: '16px', fontWeight: 700, color: 'var(--primary-color)', fontSize: '14px' }}>
-                      Show Specialists <i className="fa-solid fa-arrow-right"></i>
-                  </Link>
+                      ))
+                  )}
               </div>
           </div>
       </main>

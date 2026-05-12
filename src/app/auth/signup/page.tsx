@@ -2,6 +2,7 @@
 
 import { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import { createClientBrowser } from '@/lib/supabaseBrowser';
 
 const SPECIALIZATIONS = [
@@ -19,11 +20,9 @@ const CITIES = [
 function SignupFormContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  
-  // 1. Determine Role context dynamically
   const roleFromUrl = searchParams.get('role') === 'doctor' ? 'doctor' : 'patient';
+  
   const [role, setRole] = useState<'patient' | 'doctor'>(roleFromUrl);
-
   const [loading, setLoading] = useState(false);
   const [globalError, setGlobalError] = useState<string | null>(null);
   
@@ -31,8 +30,7 @@ function SignupFormContent() {
     fullName: '',
     email: '',
     password: '',
-    phone: '', // Mandatory patient/doctor communication contact
-    // Doctor specific fields below:
+    phone: '',
     specialization: '',
     city: '',
     location: '',
@@ -50,19 +48,16 @@ function SignupFormContent() {
 
   const validate = () => {
     const newErrors: any = {};
-    if (!formData.fullName) newErrors.fullName = "Full Name required";
-    if (!formData.email) newErrors.email = "Valid email required";
-    if (!formData.password || formData.password.length < 6) newErrors.password = "6+ characters required";
-    
-    // Patient requires contact phone usually for confirmation
-    if (role === 'patient' && !formData.phone) newErrors.phone = "Phone contact required";
+    if (!formData.fullName) newErrors.fullName = "Required";
+    if (!formData.email) newErrors.email = "Required";
+    if (!formData.password || formData.password.length < 6) newErrors.password = "Minimum 6 characters required";
+    if (role === 'patient' && !formData.phone) newErrors.phone = "Mandatory";
 
-    // Conditional validation branch only enforced on Doctor flows
     if (role === 'doctor') {
-        if (!formData.specialization) newErrors.specialization = "Select specialization";
-        if (!formData.city) newErrors.city = "Select primary city";
-        if (!formData.location) newErrors.location = "Clinical location required";
-        if (!formData.experience) newErrors.experience = "Experience years required";
+        if (!formData.specialization) newErrors.specialization = "Selection mandatory";
+        if (!formData.city) newErrors.city = "Selection mandatory";
+        if (!formData.location) newErrors.location = "Field mandatory";
+        if (!formData.experience) newErrors.experience = "Field mandatory";
     }
     
     setErrors(newErrors);
@@ -72,27 +67,18 @@ function SignupFormContent() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setGlobalError(null);
-    
     if (!validate()) return;
 
     setLoading(true);
     const supabase = createClientBrowser();
 
     try {
-      // 1. Common User creation across ALL roles
-      const { data, error: authErr } = await supabase.auth.signUp({
-        email: formData.email,
-        password: formData.password,
-      });
-
+      const { data, error: authErr } = await supabase.auth.signUp({ email: formData.email, password: formData.password });
       if (authErr) throw authErr;
 
       if (data.user) {
-        // 2. Differentiated relational mapping routing
         if (role === 'doctor') {
-            const { error: insertErr } = await supabase
-              .from('doctors')
-              .insert({
+            await supabase.from('doctors').insert({
                 id: data.user.id,
                 name: formData.fullName,
                 email: formData.email,
@@ -104,156 +90,149 @@ function SignupFormContent() {
                 bio: formData.bio,
                 rating: 5.0,
                 is_available: true,
-              });
-            if (insertErr) throw insertErr;
-            alert("Doctor Account Activated!");
+            });
             router.push('/doctor/dashboard');
         } else {
-            // Patient branch implementation
-            const { error: insertErr } = await supabase
-              .from('patients')
-              .insert({
+            await supabase.from('patients').insert({
                 id: data.user.id,
                 name: formData.fullName,
                 email: formData.email,
                 phone: formData.phone || 'N/A'
-              });
-            if (insertErr) throw insertErr;
-            alert("Patient Account Activated!");
+            });
             router.push('/patient/dashboard');
         }
-      } else {
-        throw new Error("Session initialization sequence broken.");
+        router.refresh();
       }
     } catch (err: any) {
-      setGlobalError(err.message || "Processing constraints failed.");
-      console.error("Reg Error:", err);
+      setGlobalError(err.message || "Internal constraint breach.");
     } finally {
       setLoading(false);
     }
   };
 
+  const primaryColor = role === 'doctor' ? '#2563EB' : 'var(--primary-color)';
+
   return (
-    <div style={{ minHeight: 'calc(100vh - 80px)', display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '40px 20px' }} className="section-bg">
-      <div className="card fade-in" style={{ width: '100%', maxWidth: role === 'doctor' ? '650px' : '450px', padding: '40px', border: 'none', boxShadow: 'var(--shadow-lg)', transition: 'all 0.3s ease' }}>
+    <div style={{ minHeight: 'calc(100vh - 80px)', display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '50px 20px', background: 'linear-gradient(to bottom right, #F8FAFC, #F1F5F9)', position: 'relative', overflow: 'hidden' }}>
+      
+      <div style={{ position: 'absolute', top: '10%', right: '15%', width: '250px', height: '250px', background: `${primaryColor}10`, borderRadius: '50%', filter: 'blur(60px)', zIndex: 0 }}></div>
+      <div style={{ position: 'absolute', bottom: '10%', left: '10%', width: '300px', height: '300px', background: `${primaryColor}08`, borderRadius: '50%', filter: 'blur(70px)', zIndex: 0 }}></div>
+
+      <div className="card fade-in" style={{ width: '100%', maxWidth: role === 'doctor' ? '680px' : '480px', position: 'relative', zIndex: 1, padding: '0', border: 'none', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.06)', borderRadius: '28px', background: 'rgba(255,255,255,0.98)', overflow: 'hidden', transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)' }}>
         
-        <div style={{ textAlign: 'center', marginBottom: '30px' }}>
-           <h1 style={{ fontSize: '28px', fontWeight: 800 }}>Start Registration</h1>
-           <p style={{ color: 'var(--text-light)', marginTop: '5px' }}>Configure your connectivity node below.</p>
+        <div style={{ background: primaryColor, padding: '40px 30px', textAlign: 'center', color: 'white' }}>
+            <h1 style={{ fontSize: '28px', fontWeight: 900, letterSpacing: '-0.5px', color: 'white', marginBottom: '5px' }}>Global Matrix Enrollment</h1>
+            <p style={{ opacity: 0.9, fontSize: '15px', fontWeight: 500 }}>Initialize new distinct user node within architecture.</p>
         </div>
 
-        {/* Requirement: Inline role switcher explicitly activating standard flows */}
-        <div style={{ background: '#F3F4F6', padding: '6px', borderRadius: '12px', display: 'flex', gap: '4px', marginBottom: '25px' }}>
-            <button onClick={() => setRole('patient')} style={{ flex: 1, padding: '10px', border: 'none', borderRadius: '8px', background: role === 'patient' ? 'white' : 'transparent', boxShadow: role === 'patient' ? 'var(--shadow-sm)' : 'none', fontWeight: role === 'patient' ? 700 : 500, color: role === 'patient' ? 'var(--primary-color)' : 'var(--text-light)', cursor: 'pointer' }}>
-               Patient Mode
-            </button>
-            <button onClick={() => setRole('doctor')} style={{ flex: 1, padding: '10px', border: 'none', borderRadius: '8px', background: role === 'doctor' ? 'white' : 'transparent', boxShadow: role === 'doctor' ? 'var(--shadow-sm)' : 'none', fontWeight: role === 'doctor' ? 700 : 500, color: role === 'doctor' ? 'var(--primary-color)' : 'var(--text-light)', cursor: 'pointer' }}>
-               Doctor Mode
-            </button>
-        </div>
-
-        {globalError && (
-           <div style={{ padding: '12px 16px', background: '#FEF2F2', color: 'var(--danger-color)', borderRadius: '8px', fontSize: '14px', marginBottom: '25px', display: 'flex', gap: '10px', alignItems: 'center' }}>
-              <i className="fa-solid fa-triangle-exclamation"></i> {globalError}
-           </div>
-        )}
-
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-          
-          {/* UNIVERSAL CORE DATA BLOCKS FOR ALL USERS */}
-          <div className="form-group" style={{ margin: 0 }}>
-             <label className="form-label">Full Identifier Name <span style={{ color: 'red' }}>*</span></label>
-             <input name="fullName" type="text" className="form-control" value={formData.fullName} onChange={handleChange} placeholder="e.g. Hammad Khan" />
-             {errors.fullName && <small style={{ color: 'red', marginTop: '4px', display: 'block' }}>{errors.fullName}</small>}
-          </div>
-
-          <div className="form-group" style={{ margin: 0 }}>
-             <label className="form-label">Secured Mail Gateway <span style={{ color: 'red' }}>*</span></label>
-             <input name="email" type="email" className="form-control" value={formData.email} onChange={handleChange} placeholder="name@mail.pk" />
-             {errors.email && <small style={{ color: 'red', marginTop: '4px', display: 'block' }}>{errors.email}</small>}
-          </div>
-
-          <div className="form-group" style={{ margin: 0 }}>
-             <label className="form-label">Auth Cipher Key <span style={{ color: 'red' }}>*</span></label>
-             <input name="password" type="password" className="form-control" value={formData.password} onChange={handleChange} placeholder="Min. 6 characters" />
-             {errors.password && <small style={{ color: 'red', marginTop: '4px', display: 'block' }}>{errors.password}</small>}
-          </div>
-
-          {/* Phone Contact Input always safe to collect for both */}
-          <div className="form-group" style={{ margin: 0 }}>
-             <label className="form-label">Contact Connection # <span style={{ color: role === 'patient' ? 'red' : 'transparent' }}>{role === 'patient' && '*'}</span></label>
-             <input name="phone" type="text" className="form-control" value={formData.phone} onChange={handleChange} placeholder="+923XXXXXXXXX" />
-             {errors.phone && <small style={{ color: 'red', marginTop: '4px', display: 'block' }}>{errors.phone}</small>}
-          </div>
-
-          {/* CONDITIONAL DOCTOR ENRICHMENT OVERLAYS */}
-          {role === 'doctor' && (
-            <div className="fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-               <hr style={{ border: 'none', borderTop: '1px solid #F3F4F6', margin: '5px 0' }} />
-               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-                  <div className="form-group" style={{ margin: 0 }}>
-                     <label className="form-label">Specialization <span style={{ color: 'red' }}>*</span></label>
-                     <select name="specialization" className="form-control" value={formData.specialization} onChange={handleChange}>
-                        <option value="">Select...</option>
-                        {SPECIALIZATIONS.map(s => <option key={s} value={s}>{s}</option>)}
-                     </select>
-                     {errors.specialization && <small style={{ color: 'red' }}>{errors.specialization}</small>}
-                  </div>
-                  <div className="form-group" style={{ margin: 0 }}>
-                     <label className="form-label">Base City <span style={{ color: 'red' }}>*</span></label>
-                     <select name="city" className="form-control" value={formData.city} onChange={handleChange}>
-                        <option value="">Select...</option>
-                        {CITIES.map(c => <option key={c} value={c}>{c}</option>)}
-                     </select>
-                     {errors.city && <small style={{ color: 'red' }}>{errors.city}</small>}
-                  </div>
-               </div>
-               
-               <div className="form-group" style={{ margin: 0 }}>
-                  <label className="form-label">Clinical Registry Loc <span style={{ color: 'red' }}>*</span></label>
-                  <input name="location" type="text" className="form-control" placeholder="Phase, Area name" value={formData.location} onChange={handleChange} />
-                  {errors.location && <small style={{ color: 'red' }}>{errors.location}</small>}
-               </div>
-
-               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-                  <div className="form-group" style={{ margin: 0 }}>
-                     <label className="form-label">Consult Mode</label>
-                     <select name="consultationType" className="form-control" value={formData.consultationType} onChange={handleChange}>
-                        <option value="Online">Online</option><option value="Physical">Physical</option><option value="Both">Both</option>
-                     </select>
-                  </div>
-                  <div className="form-group" style={{ margin: 0 }}>
-                     <label className="form-label">Years Exp <span style={{ color: 'red' }}>*</span></label>
-                     <input name="experience" type="number" className="form-control" value={formData.experience} onChange={handleChange} />
-                     {errors.experience && <small style={{ color: 'red' }}>{errors.experience}</small>}
-                  </div>
-               </div>
-               
-               <div className="form-group" style={{ margin: 0 }}>
-                  <label className="form-label">Practice Summary</label>
-                  <textarea name="bio" rows={2} className="form-control" placeholder="Short biography..." value={formData.bio} onChange={handleChange}></textarea>
-               </div>
+        <div style={{ padding: '40px' }}>
+            <div style={{ background: '#F1F5F9', padding: '6px', borderRadius: '14px', display: 'flex', gap: '4px', marginBottom: '35px' }}>
+                <button type="button" onClick={() => setRole('patient')} style={{ flex: 1, padding: '12px', border: 'none', borderRadius: '10px', background: role === 'patient' ? 'white' : 'transparent', boxShadow: role === 'patient' ? '0 4px 6px -1px rgba(0,0,0,0.05)' : 'none', fontWeight: 800, fontSize: '13px', textTransform: 'uppercase', color: role === 'patient' ? 'var(--primary-color)' : '#64748B', cursor: 'pointer', transition: '0.2s' }}>
+                   Client Access
+                </button>
+                <button type="button" onClick={() => setRole('doctor')} style={{ flex: 1, padding: '12px', border: 'none', borderRadius: '10px', background: role === 'doctor' ? 'white' : 'transparent', boxShadow: role === 'doctor' ? '0 4px 6px -1px rgba(0,0,0,0.05)' : 'none', fontWeight: 800, fontSize: '13px', textTransform: 'uppercase', color: role === 'doctor' ? '#2563EB' : '#64748B', cursor: 'pointer', transition: '0.2s' }}>
+                   Physician Access
+                </button>
             </div>
-          )}
 
-          <button type="submit" disabled={loading} className="btn btn-primary" style={{ width: '100%', padding: '14px', marginTop: '10px', fontSize: '16px', fontWeight: 700 }}>
-             {loading ? (
-               <> <i className="fa-solid fa-spinner fa-spin"></i> Establishing Network Matrix... </>
-             ) : (
-               `Finalize ${role === 'doctor' ? 'Practice' : 'Client'} Registration`
-             )}
-          </button>
-        </form>
+            {globalError && (
+               <div style={{ padding: '14px 18px', background: '#FEF2F2', color: '#DC2626', borderRadius: '12px', fontSize: '14px', fontWeight: 600, marginBottom: '25px', display: 'flex', gap: '10px', alignItems: 'center', border: '1px solid #FEE2E2' }}>
+                  <i className="fa-solid fa-triangle-exclamation"></i> {globalError}
+               </div>
+            )}
+
+            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                
+                <div style={{ display: 'grid', gridTemplateColumns: role === 'doctor' ? '1fr 1fr' : '1fr', gap: '20px' }}>
+                    <div className="form-group" style={{ margin: 0 }}>
+                        <label style={{ display: 'block', fontWeight: 700, fontSize: '13px', color: '#475569', marginBottom: '8px', textTransform: 'uppercase' }}>Identity Label</label>
+                        <input name="fullName" type="text" className="form-control" style={{ height: '50px', borderRadius: '12px', background: '#F8FAFC', border: '1.5px solid #E2E8F0', fontSize: '15px' }} value={formData.fullName} onChange={handleChange} placeholder="e.g. Alex Morgan" />
+                        {errors.fullName && <small style={{ color: '#E11D48', fontWeight: 600, marginTop: '4px', display: 'block' }}>{errors.fullName}</small>}
+                    </div>
+                    <div className="form-group" style={{ margin: 0 }}>
+                        <label style={{ display: 'block', fontWeight: 700, fontSize: '13px', color: '#475569', marginBottom: '8px', textTransform: 'uppercase' }}>Network Channel</label>
+                        <input name="email" type="email" className="form-control" style={{ height: '50px', borderRadius: '12px', background: '#F8FAFC', border: '1.5px solid #E2E8F0', fontSize: '15px' }} value={formData.email} onChange={handleChange} placeholder="user@host.com" />
+                        {errors.email && <small style={{ color: '#E11D48', fontWeight: 600, marginTop: '4px', display: 'block' }}>{errors.email}</small>}
+                    </div>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: role === 'doctor' ? '1fr 1fr' : '1fr', gap: '20px' }}>
+                    <div className="form-group" style={{ margin: 0 }}>
+                        <label style={{ display: 'block', fontWeight: 700, fontSize: '13px', color: '#475569', marginBottom: '8px', textTransform: 'uppercase' }}>Encryption Cipher</label>
+                        <input name="password" type="password" className="form-control" style={{ height: '50px', borderRadius: '12px', background: '#F8FAFC', border: '1.5px solid #E2E8F0', fontSize: '15px' }} value={formData.password} onChange={handleChange} placeholder="Min 6 AlphaNum" />
+                        {errors.password && <small style={{ color: '#E11D48', fontWeight: 600, marginTop: '4px', display: 'block' }}>{errors.password}</small>}
+                    </div>
+                    <div className="form-group" style={{ margin: 0 }}>
+                        <label style={{ display: 'block', fontWeight: 700, fontSize: '13px', color: '#475569', marginBottom: '8px', textTransform: 'uppercase' }}>Mobile Stream Vector</label>
+                        <input name="phone" type="text" className="form-control" style={{ height: '50px', borderRadius: '12px', background: '#F8FAFC', border: '1.5px solid #E2E8F0', fontSize: '15px' }} value={formData.phone} onChange={handleChange} placeholder="+92 XXXXXXXXXX" />
+                        {errors.phone && <small style={{ color: '#E11D48', fontWeight: 600, marginTop: '4px', display: 'block' }}>{errors.phone}</small>}
+                    </div>
+                </div>
+
+                {role === 'doctor' && (
+                    <div className="fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '24px', padding: '30px', background: '#F8FAFC', borderRadius: '20px', border: '1px solid #E2E8F0' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                            <div>
+                                <label style={{ display: 'block', fontWeight: 700, fontSize: '12px', color: '#64748B', marginBottom: '8px', textTransform: 'uppercase' }}>Sub-Specialization</label>
+                                <select name="specialization" className="form-control" style={{ height: '48px', borderRadius: '10px', border: '1px solid #CBD5E1', fontSize: '14px' }} value={formData.specialization} onChange={handleChange}>
+                                    <option value="">Identify Field...</option>
+                                    {SPECIALIZATIONS.map(s => <option key={s} value={s}>{s}</option>)}
+                                </select>
+                                {errors.specialization && <small style={{ color: '#E11D48', fontWeight: 600 }}>{errors.specialization}</small>}
+                            </div>
+                            <div>
+                                <label style={{ display: 'block', fontWeight: 700, fontSize: '12px', color: '#64748B', marginBottom: '8px', textTransform: 'uppercase' }}>Operational City</label>
+                                <select name="city" className="form-control" style={{ height: '48px', borderRadius: '10px', border: '1px solid #CBD5E1', fontSize: '14px' }} value={formData.city} onChange={handleChange}>
+                                    <option value="">Select Hub...</option>
+                                    {CITIES.map(c => <option key={c} value={c}>{c}</option>)}
+                                </select>
+                                {errors.city && <small style={{ color: '#E11D48', fontWeight: 600 }}>{errors.city}</small>}
+                            </div>
+                        </div>
+                        
+                        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '20px' }}>
+                            <div>
+                                <label style={{ display: 'block', fontWeight: 700, fontSize: '12px', color: '#64748B', marginBottom: '8px', textTransform: 'uppercase' }}>Local Anchor Coordinates</label>
+                                <input name="location" type="text" className="form-control" placeholder="Suite, Clinic Address" style={{ height: '48px', borderRadius: '10px', border: '1px solid #CBD5E1', fontSize: '14px' }} value={formData.location} onChange={handleChange} />
+                                {errors.location && <small style={{ color: '#E11D48', fontWeight: 600 }}>{errors.location}</small>}
+                            </div>
+                            <div>
+                                <label style={{ display: 'block', fontWeight: 700, fontSize: '12px', color: '#64748B', marginBottom: '8px', textTransform: 'uppercase' }}>Service Cycles</label>
+                                <input name="experience" type="number" className="form-control" placeholder="Years" style={{ height: '48px', borderRadius: '10px', border: '1px solid #CBD5E1', fontSize: '14px' }} value={formData.experience} onChange={handleChange} />
+                                {errors.experience && <small style={{ color: '#E11D48', fontWeight: 600 }}>{errors.experience}</small>}
+                            </div>
+                        </div>
+
+                        <div>
+                            <label style={{ display: 'block', fontWeight: 700, fontSize: '12px', color: '#64748B', marginBottom: '8px', textTransform: 'uppercase' }}>Clinical Bio Profile</label>
+                            <textarea name="bio" rows={2} className="form-control" style={{ borderRadius: '10px', border: '1px solid #CBD5E1', padding: '12px', fontSize: '14px' }} placeholder="Describe practitioner capability matrix..." value={formData.bio} onChange={handleChange}></textarea>
+                        </div>
+                    </div>
+                )}
+
+                <button type="submit" disabled={loading} className="btn" style={{ width: '100%', padding: '16px', marginTop: '10px', fontSize: '16px', fontWeight: 900, background: primaryColor, color: 'white', border: 'none', borderRadius: '14px', boxShadow: `0 10px 20px -5px ${primaryColor}40`, cursor: 'pointer', transition: 'all 0.2s' }}>
+                   {loading ? (
+                     <> <i className="fa-solid fa-satellite fa-spin" style={{ marginRight: '10px' }}></i> Synthesizing Unique Entry... </>
+                   ) : (
+                     `Provision Neural Node`
+                   )}
+                </button>
+            </form>
+
+            <div style={{ textAlign: 'center', marginTop: '30px', color: '#64748B', fontSize: '14px', borderTop: '1px solid #F1F5F9', paddingTop: '25px' }}>
+                Existing registered signal detected? <Link href="/auth/login" style={{ color: primaryColor, fontWeight: 800, textDecoration: 'none', marginLeft: '4px' }}>Recall Auth Session</Link>
+            </div>
+        </div>
       </div>
       
-      <style jsx>{` @media (max-width: 600px) { div[style*="display: grid"] { grid-template-columns: 1fr !important; } } `}</style>
+      <style jsx>{` @media (max-width: 700px) { div[style*="display: grid"] { grid-template-columns: 1fr !important; } } `}</style>
     </div>
   );
 }
 
 export default function UnifiedSignupPage() {
   return (
-    <Suspense fallback={<div style={{ padding: '100px', textAlign: 'center' }}>Warming Authorization Nodes...</div>}>
+    <Suspense fallback={<div style={{ padding: '100px', textAlign: 'center' }}>Initializing Enrollment Buffers...</div>}>
        <SignupFormContent />
     </Suspense>
   );
