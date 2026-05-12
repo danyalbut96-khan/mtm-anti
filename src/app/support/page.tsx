@@ -157,11 +157,11 @@ export default function SupportPage() {
       
       <style jsx>{`
          @media (max-width: 768px) {
-             div[style*="padding: '30px'"] {
+             .chat-page-wrapper {
                  padding: 10px !important;
              }
-             .card {
-                 height: calc(100vh - 120px) !important;
+             .chat-chatbox {
+                 height: calc(100vh - 100px) !important;
                  max-width: 100% !important;
              }
              .chat-input-container {
