@@ -6,16 +6,24 @@ import Image from 'next/image';
 
 export default function SearchPage() {
   const [searchTerm, setSearchTerm] = useState('Cardiologist');
-  const [city, setCity] = useState('New York, NY');
+  const [city, setCity] = useState('Islamabad');
   const [doctors, setDoctors] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [isNearby, setIsNearby] = useState(false);
+  const [activeChatDoc, setActiveChatDoc] = useState<any | null>(null);
+  const [miniChatInput, setMiniChatInput] = useState('');
+  const [chatLogs, setChatLogs] = useState<Record<string, any[]>>({});
 
   const handleSearch = async () => {
     setLoading(true);
+    setIsNearby(false);
     try {
       const res = await fetch(`/api/doctors/search?specialization=${searchTerm}&city=${city}`);
       const data = await res.json();
       setDoctors(data.doctors || []);
+      if (data.isNearbyFallback) {
+        setIsNearby(true);
+      }
     } catch (error) {
       console.error("Fetch Failure");
     } finally {
@@ -83,8 +91,13 @@ export default function SearchPage() {
           </aside>
 
           <main>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '24px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', marginBottom: '24px' }}>
               <h3 style={{ fontSize: '22px', fontWeight: 700 }}>{doctors.length} Matches Found</h3>
+              {isNearby && (
+                <p style={{ color: 'var(--warning-color)', fontSize: '14px', fontWeight: 600, marginTop: '4px' }}>
+                  <i className="fa-solid fa-circle-info"></i> No exact matches in {city}. Showing doctors in nearby cities.
+                </p>
+              )}
             </div>
 
             {doctors.length === 0 && !loading && (
@@ -139,13 +152,64 @@ export default function SearchPage() {
 
                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.5fr', gap: '12px', borderTop: '1px solid #F3F4F6', paddingTop: '20px' }}>
                         <Link href={`/doctor/${doc.id}`} className="btn btn-outline" style={{ padding: '10px' }}>Profile</Link>
-                        <Link href={`/booking?docId=${doc.id}`} className="btn btn-primary" style={{ padding: '10px', fontWeight: 700 }}>Book Now</Link>
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                           <Link href={`/booking?docId=${doc.id}`} className="btn btn-primary" style={{ flex: 1, padding: '10px', fontWeight: 700 }}>Book Now</Link>
+                           <button 
+                             title="Quick Query"
+                             onClick={() => setActiveChatDoc(doc)} 
+                             style={{ width: '45px', background: '#F0FDFA', border: 'none', color: '#0D9488', borderRadius: '10px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px' }}
+                           >
+                             <i className="fa-solid fa-comment-dots"></i>
+                           </button>
+                        </div>
                    </div>
                 </div>
               ))}
             </div>
           </main>
         </div>
+
+        {/* Floating Mini-Chat Widget Integration per Phase 3 */}
+        {activeChatDoc && (
+           <div className="fade-in" style={{ position: 'fixed', bottom: '20px', right: '20px', width: '340px', height: '400px', background: 'white', borderRadius: '16px', boxShadow: 'var(--shadow-lg)', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', overflow: 'hidden', zIndex: 2000 }}>
+              <div style={{ background: 'var(--primary-color)', color: 'white', padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ fontWeight: 600, fontSize: '14px' }}>Chat with Dr. {activeChatDoc.name.split(' ').pop()}</div>
+                  <i className="fa-solid fa-xmark" style={{ cursor: 'pointer' }} onClick={() => setActiveChatDoc(null)}></i>
+              </div>
+              <div style={{ flex: 1, background: '#F9FAFB', padding: '15px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  <div style={{ alignSelf: 'flex-start', background: 'white', padding: '8px 12px', borderRadius: '10px', borderBottomLeftRadius: 0, fontSize: '13px', border: '1px solid #E5E7EB' }}>
+                      Hello! How can I help you specifically today?
+                  </div>
+                  {(chatLogs[activeChatDoc.id] || []).map((log: any, i: number) => (
+                      <div key={i} style={{
+                          alignSelf: log.role === 'user' ? 'flex-end' : 'flex-start',
+                          background: log.role === 'user' ? 'var(--primary-color)' : 'white',
+                          color: log.role === 'user' ? 'white' : 'var(--text-color)',
+                          padding: '8px 12px', borderRadius: '10px',
+                          fontSize: '13px',
+                          border: log.role === 'user' ? 'none' : '1px solid #E5E7EB'
+                      }}>
+                          {log.content}
+                      </div>
+                  ))}
+              </div>
+              <div style={{ padding: '10px', background: 'white', borderTop: '1px solid #E5E7EB', display: 'flex', gap: '6px' }}>
+                  <input 
+                    type="text" 
+                    className="form-control" 
+                    style={{ padding: '8px 12px', fontSize: '13px', borderRadius: '8px' }} 
+                    placeholder="Type a quick message..."
+                    value={miniChatInput}
+                    onChange={(e) => setMiniChatInput(e.target.value)}
+                    onKeyDown={(e) => { if(e.key === 'Enter') {
+                        const docId = activeChatDoc.id;
+                        setChatLogs(p => ({...p, [docId]: [...(p[docId]||[]), {role:'user', content: miniChatInput}, {role:'ai', content:"Got it! The doctor will respond soon."}]}));
+                        setMiniChatInput('');
+                    }}}
+                  />
+              </div>
+           </div>
+        )}
       </div>
       <style jsx>{`
         @media (max-width: 768px) {

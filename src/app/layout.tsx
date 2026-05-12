@@ -44,7 +44,7 @@ export default function RootLayout({
         <main className="fade-in">{children}</main>
 
         {/* Floating Chat Widget Requirement - Placed Globally per Phase 2 prompt */}
-        <Link href="/chat" className="floating-chat-widget" title="Quick AI Intake Chat">
+        <Link href="/support" className="floating-chat-widget" title="Quick AI Intake Chat">
              <i className="fa-solid fa-comment-medical"></i>
         </Link>
 
